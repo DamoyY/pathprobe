@@ -1,18 +1,16 @@
 import assert from "node:assert/strict";
+import nodePath from "node:path";
 import { after, before, test } from "node:test";
 import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
 import { createFixture, expectedPaths } from "../benchmark/fixture.mjs";
 
 let fixture;
-
 before(async () => {
   fixture = await createFixture();
 });
-
 after(async () => {
   await fixture.cleanup();
 });
-
 test("finds every expected path at the highest level", async () => {
   const text = fixture.cases.map((item) => item.text).join("\n");
   const found = new Set(
@@ -20,7 +18,6 @@ test("finds every expected path at the highest level", async () => {
   );
   assert.deepEqual(found, expectedPaths(fixture));
 });
-
 test("finds each feature by its documented minimum level", async () => {
   const results = await Promise.all(
     fixture.cases.map((item) =>
@@ -34,7 +31,6 @@ test("finds each feature by its documented minimum level", async () => {
     }
   }
 });
-
 test("returns files and directories but excludes missing paths", async () => {
   const found = await findExistingPaths(
     "Try package.json, missing.txt, and src.",
@@ -49,7 +45,6 @@ test("returns files and directories but excludes missing paths", async () => {
     new Set([fixture.pathFor("package.json"), fixture.pathFor("src")]),
   );
 });
-
 test("uses additional variables", async () => {
   const text = "Load %PROJECT_ROOT%/config/.env.local.";
   const withoutVariables = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
@@ -64,15 +59,28 @@ test("uses additional variables", async () => {
   assert.deepEqual(withoutVariables, []);
   assert.deepEqual(withVariables, [fixture.pathFor("config/.env.local")]);
 });
-
 test("controls ignore rules", async () => {
   const text = fixture.ignoredPaths.join(", ");
   const previousConfig = process.env.GIT_CONFIG_GLOBAL;
   process.env.GIT_CONFIG_GLOBAL = fixture.globalConfig;
   try {
-    const respected = await findExistingPaths(text, 2, fixture.directories, {}, true, true);
+    const respected = await findExistingPaths(
+      `${text}, package.json, src/index.ts, ./src`,
+      2,
+      fixture.directories,
+      {},
+      true,
+      true,
+    );
     const disabled = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
-    assert.deepEqual(respected, []);
+    assert.deepEqual(
+      new Set(respected),
+      new Set([
+        fixture.pathFor("package.json"),
+        fixture.pathFor("src/index.ts"),
+        fixture.pathFor("src"),
+      ]),
+    );
     assert.deepEqual(new Set(disabled), new Set(fixture.ignoredPaths.map(fixture.pathFor)));
   } finally {
     if (previousConfig === undefined) {
@@ -82,7 +90,6 @@ test("controls ignore rules", async () => {
     }
   }
 });
-
 test("controls hidden paths", async () => {
   const text = fixture.hiddenPaths.join(", ");
   const hidden = await findExistingPaths(text, 2, fixture.directories, {}, false, false);
@@ -90,7 +97,6 @@ test("controls hidden paths", async () => {
   assert.deepEqual(hidden, []);
   assert.deepEqual(new Set(visible), new Set(fixture.hiddenPaths.map(fixture.pathFor)));
 });
-
 test("rejects invalid input levels", async () => {
   await assert.rejects(findExistingPaths("package.json", 0, fixture.directories), RangeError);
   await assert.rejects(
@@ -110,7 +116,6 @@ test("rejects invalid search directories", async () => {
     TypeError,
   );
 });
-
 test("restricts absolute paths to the search directories", async () => {
   const found = await findExistingPaths(
     `"${fixture.root}"`,
@@ -123,6 +128,30 @@ test("restricts absolute paths to the search directories", async () => {
   assert.deepEqual(found, []);
 });
 
+test("restricts relative paths to the search directories", async () => {
+  const relative = nodePath.relative(fixture.primary, fixture.root);
+  const found = await findExistingPaths(
+    `"${nodePath.join(relative, "global.ignore")}"`,
+    1,
+    fixture.directories,
+    {},
+    false,
+    true,
+  );
+  assert.deepEqual(found, []);
+});
+
+test("allows the search directories themselves", async () => {
+  const found = await findExistingPaths(
+    `"${fixture.primary}"`,
+    1,
+    fixture.directories,
+    {},
+    false,
+    true,
+  );
+  assert.deepEqual(found, [fixture.primary]);
+});
 test("rejects invalid variables and boolean controls", async () => {
   await assert.rejects(findExistingPaths("package.json", 1, fixture.directories, []), TypeError);
   await assert.rejects(

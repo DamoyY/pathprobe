@@ -1,21 +1,14 @@
 import { fileURLToPath } from "node:url";
-import { stat } from "node:fs/promises";
 import nodePath from "node:path";
-import pLimit from "p-limit";
+import { locateExistingPaths } from "./existence.js";
 import { filterSearchablePaths, isWithinRoot } from "./policy.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, Variables } from "./types.js";
 
 const environmentPattern = /%([A-Za-z_][A-Za-z0-9_]*)%|\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/gu;
-const knownFileErrors = new Set([
-  "EACCES",
-  "ELOOP",
-  "ENAMETOOLONG",
-  "ENOTDIR",
-  "ENOENT",
-  "EPERM",
-  "EINVAL",
-]);
+const driveRelativePattern = /^[A-Za-z]:/u;
+const parentSegmentPattern = /(?:^|[\\/])\.\.(?:[\\/]|$)/u;
+type IndexedPath = [filePath: string, candidateIndex: number];
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -87,23 +80,17 @@ function toPaths(
     const absolute = nodePath.normalize(expanded);
     return roots.some((root) => isWithinRoot(absolute, root)) ? [absolute] : [];
   }
-  return roots.map((root) => nodePath.resolve(root, expanded));
-}
-async function isExistingPath(filePath: string): Promise<boolean> {
-  try {
-    const pathStats = await stat(filePath);
-    return pathStats.isFile() || pathStats.isDirectory();
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      typeof error.code === "string" &&
-      knownFileErrors.has(error.code)
-    ) {
-      return false;
-    }
-    throw error;
+  const paths = roots.map((root) => nodePath.resolve(root, expanded));
+  if (
+    !parentSegmentPattern.test(expanded) &&
+    !(process.platform === "win32" && driveRelativePattern.test(expanded))
+  ) {
+    return paths;
   }
+  return paths.filter((filePath, index) => {
+    const root = roots[index];
+    return root !== undefined && isWithinRoot(filePath, root);
+  });
 }
 export async function validateCandidates(
   candidates: Candidate[],
@@ -112,8 +99,7 @@ export async function validateCandidates(
   respectIgnore: boolean,
   searchHidden: boolean,
 ): Promise<string[]> {
-  const limit = pLimit(settings.validationConcurrency);
-  const indexedPaths = new Map<string, [string, number]>();
+  const indexedPaths = new Map<string, IndexedPath>();
   for (const [index, candidate] of candidates.entries()) {
     const paths = toPaths(
       candidate.value,
@@ -130,23 +116,22 @@ export async function validateCandidates(
       }
     }
   }
-  const found: [string, number][] = [];
-  await Promise.all(
-    [...indexedPaths.values()].map(([filePath, index]) =>
-      limit(async () => {
-        if (await isExistingPath(filePath)) {
-          found.push([filePath, index]);
-        }
-      }),
-    ),
-  );
-  const allowed = await filterSearchablePaths(
-    found.map(([filePath]) => filePath),
-    roots,
-    respectIgnore,
-    searchHidden,
-  );
-  return found
+  const orderedPaths = [...indexedPaths.values()];
+  let allowed: Set<string>;
+  if (respectIgnore) {
+    allowed = await filterSearchablePaths(
+      orderedPaths.map(([filePath]) => filePath),
+      roots,
+      true,
+      searchHidden,
+    );
+  } else {
+    allowed = await locateExistingPaths(orderedPaths, roots);
+    if (!searchHidden) {
+      allowed = await filterSearchablePaths([...allowed], roots, false, false);
+    }
+  }
+  return orderedPaths
     .toSorted((left, right) => left[1] - right[1])
     .map(([filePath]) => filePath)
     .filter((filePath) => allowed.has(filePath));

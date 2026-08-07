@@ -1,5 +1,6 @@
 import { stat } from "node:fs/promises";
 import nodePath from "node:path";
+import fastGlob from "fast-glob";
 import { convertPathToPattern, globby } from "globby";
 import { settings } from "../config/settings.js";
 
@@ -18,18 +19,23 @@ export function isWithinRoot(filePath: string, root: string): boolean {
 function isHidden(relativePath: string): boolean {
   return relativePath.split(/[\\/]/u).some((part) => part.length > 1 && part.startsWith("."));
 }
-function globbyOptions(root: string, respectIgnore: boolean, searchHidden: boolean) {
+function traversalOptions(root: string, searchHidden: boolean) {
   return {
     caseSensitiveMatch: process.platform !== "win32",
     cwd: root,
     dot: searchHidden,
-    expandDirectories: false,
     followSymbolicLinks: false,
+    onlyFiles: false,
+    unique: true,
+  } as const;
+}
+function globbyOptions(root: string, respectIgnore: boolean, searchHidden: boolean) {
+  return {
+    ...traversalOptions(root, searchHidden),
+    expandDirectories: false,
     gitignore: respectIgnore,
     globalGitignore: respectIgnore,
     ...(respectIgnore ? { ignoreFiles: settings.ignoreFilePatterns } : {}),
-    onlyFiles: false,
-    unique: true,
   } as const;
 }
 export async function resolveSearchDirectories(directories: readonly string[]): Promise<string[]> {
@@ -61,6 +67,9 @@ export async function listSearchEntries(
   respectIgnore: boolean,
   searchHidden: boolean,
 ): Promise<string[]> {
+  if (!respectIgnore) {
+    return fastGlob("**/*", traversalOptions(root, searchHidden));
+  }
   return globby("**/*", globbyOptions(root, respectIgnore, searchHidden));
 }
 export async function filterSearchablePaths(

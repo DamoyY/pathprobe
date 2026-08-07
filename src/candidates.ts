@@ -61,15 +61,28 @@ function addSpanMatches(
     const clauseText = clause[0];
     const tokens = [...clauseText.matchAll(tokenPattern)].map((token) => ({
       end: clauseStart + (token.index ?? 0) + token[0].length,
+      hint: Number(pathHintPattern.test(token[0])),
       start: clauseStart + (token.index ?? 0),
       value: token[0],
     }));
+    const hintCounts = [0];
+    for (const token of tokens) {
+      hintCounts.push((hintCounts.at(-1) ?? 0) + token.hint);
+    }
     for (let start = 0; start < tokens.length; start += 1) {
       const last = Math.min(tokens.length, start + maximumWords);
       for (let end = start + 1; end <= last; end += 1) {
         const firstToken = tokens[start];
         const lastToken = tokens[end - 1];
-        if (firstToken === undefined || lastToken === undefined) {
+        const hintsBefore = hintCounts[start];
+        const hintsAfter = hintCounts[end];
+        if (
+          firstToken === undefined ||
+          lastToken === undefined ||
+          hintsBefore === undefined ||
+          hintsAfter === undefined ||
+          hintsBefore === hintsAfter
+        ) {
           continue;
         }
         const value = text.slice(firstToken.start, lastToken.end);

@@ -5,6 +5,7 @@
     "": {
       "name": "realpath-text",
       "dependencies": {
+        "fast-glob": "latest",
         "globby": "latest",
         "p-limit": "latest",
       },
@@ -137,7 +138,7 @@
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@4.0.0", "", {}, "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="],
 
-    "@types/node": ["@types/node@26.1.2", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg=="],
+    "@types/node": ["@types/node@26.2.0", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg=="],
 
     "@typescript/typescript-darwin-arm64": ["@typescript/typescript-darwin-arm64@7.1.0-dev.20260807.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-t+9G1Y2TgWCVOZAZjq2iNd4cEBrAAAWO8dCmUogVCvRD/aTU3HMqkVnDqgTDxwEzN9lRhrXAM+uJfY8TObVCYA=="],
 

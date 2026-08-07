@@ -7,6 +7,8 @@ export interface Candidate {
   value: string;
 }
 export interface SearchSettings {
+  batchValidationThreshold: number;
+  directoryScanThreshold: number;
   ignoreFilePatterns: string[];
   locationSuffixPattern: RegExp;
   respectIgnoreByDefault: boolean;

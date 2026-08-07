@@ -26,6 +26,7 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
+    "fast-glob": "latest",
     "globby": "latest",
     "p-limit": "latest"
   },
