@@ -1,10 +1,12 @@
 import { Bench } from "tinybench";
 import os from "node:os";
-import { findExistingFilePaths, MAX_LEVEL } from "../../dist/index.mjs";
+import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
 import { createFixture } from "./fixture.mjs";
 
 const fixture = await createFixture();
 const text = fixture.cases.map((item) => item.text).join("\n");
+const find = (input, level) =>
+  findExistingPaths(input, level, fixture.directories, fixture.variables, false, true);
 const bench = new Bench({
   iterations: 5,
   time: 250,
@@ -14,7 +16,7 @@ const bench = new Bench({
 
 for (let level = 1; level <= MAX_LEVEL; level += 1) {
   bench.add(`level ${level}`, async () => {
-    await findExistingFilePaths(text, level, fixture.cwd);
+    await find(text, level);
   });
 }
 
@@ -22,9 +24,7 @@ await bench.run();
 
 const measured = await Promise.all(
   Array.from({ length: MAX_LEVEL }, (_, index) =>
-    Promise.all(
-      fixture.cases.map((item) => findExistingFilePaths(item.text, index + 1, fixture.cwd)),
-    ),
+    Promise.all(fixture.cases.map((item) => find(item.text, index + 1))),
   ),
 );
 

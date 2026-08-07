@@ -2,8 +2,9 @@ import { fileURLToPath } from "node:url";
 import { stat } from "node:fs/promises";
 import nodePath from "node:path";
 import pLimit from "p-limit";
-import type { Candidate } from "./types.js";
-import { settings } from "./config.js";
+import { filterSearchablePaths, isWithinRoot } from "./policy.js";
+import { settings } from "../config/settings.js";
+import type { Candidate, Variables } from "./types.js";
 
 const environmentPattern = /%([A-Za-z_][A-Za-z0-9_]*)%|\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/gu;
 const knownFileErrors = new Set([
@@ -15,6 +16,9 @@ const knownFileErrors = new Set([
   "EPERM",
   "EINVAL",
 ]);
+function pathKey(value: string): string {
+  return process.platform === "win32" ? value.toLowerCase() : value;
+}
 function trimCandidate(value: string, preserveSyntax: boolean): string {
   let result = preserveSyntax ? value : value.trim();
   if (
@@ -34,10 +38,10 @@ function trimCandidate(value: string, preserveSyntax: boolean): string {
   }
   return result;
 }
-function expandEnvironment(value: string): string {
+function expandEnvironment(value: string, variables: Variables): string {
   return value.replace(environmentPattern, (match, percentName, dollarName) => {
     const name = percentName ?? dollarName;
-    const replacement = process.env[name];
+    const replacement = variables[name] ?? process.env[name];
     return replacement === undefined ? match : replacement;
   });
 }
@@ -47,14 +51,19 @@ function unescape(value: string): string {
   }
   return value.replace(/\\(["'`\\])/gu, "$1").replace(/\\\\/gu, "\\");
 }
-function toFilePath(value: string, cwd: string, preserveSyntax = false): string | undefined {
-  let expanded = expandEnvironment(trimCandidate(value, preserveSyntax));
+function toPaths(
+  value: string,
+  roots: readonly string[],
+  variables: Variables,
+  preserveSyntax = false,
+): string[] {
+  let expanded = expandEnvironment(trimCandidate(value, preserveSyntax), variables);
   if (expanded.startsWith("file://")) {
     try {
       expanded = fileURLToPath(expanded);
     } catch (error) {
       if (error instanceof TypeError) {
-        return undefined;
+        return [];
       }
       throw error;
     }
@@ -62,21 +71,28 @@ function toFilePath(value: string, cwd: string, preserveSyntax = false): string 
     expanded = unescape(expanded);
     if (expanded === "~" || /^~[\\/]/u.test(expanded)) {
       expanded = nodePath.join(
-        process.env.HOME ?? process.env.USERPROFILE ?? "",
+        variables.HOME ??
+          variables.USERPROFILE ??
+          process.env.HOME ??
+          process.env.USERPROFILE ??
+          "",
         expanded.slice(2),
       );
     }
   }
   if (expanded.length === 0) {
-    return undefined;
+    return [];
   }
-  return nodePath.normalize(
-    nodePath.isAbsolute(expanded) ? expanded : nodePath.resolve(cwd, expanded),
-  );
+  if (nodePath.isAbsolute(expanded)) {
+    const absolute = nodePath.normalize(expanded);
+    return roots.some((root) => isWithinRoot(absolute, root)) ? [absolute] : [];
+  }
+  return roots.map((root) => nodePath.resolve(root, expanded));
 }
-async function isExistingFile(filePath: string): Promise<boolean> {
+async function isExistingPath(filePath: string): Promise<boolean> {
   try {
-    return (await stat(filePath)).isFile();
+    const pathStats = await stat(filePath);
+    return pathStats.isFile() || pathStats.isDirectory();
   } catch (error) {
     if (
       error instanceof Error &&
@@ -89,30 +105,49 @@ async function isExistingFile(filePath: string): Promise<boolean> {
     throw error;
   }
 }
-export async function validateCandidates(candidates: Candidate[], cwd: string): Promise<string[]> {
+export async function validateCandidates(
+  candidates: Candidate[],
+  roots: readonly string[],
+  variables: Variables,
+  respectIgnore: boolean,
+  searchHidden: boolean,
+): Promise<string[]> {
   const limit = pLimit(settings.validationConcurrency);
-  const indexedPaths = new Map<string, number>();
+  const indexedPaths = new Map<string, [string, number]>();
   for (const [index, candidate] of candidates.entries()) {
-    const filePath = toFilePath(
+    const paths = toPaths(
       candidate.value,
-      cwd,
+      roots,
+      variables,
       candidate.kind === "inventory" || candidate.kind === "quoted",
     );
-    const previousIndex = filePath === undefined ? undefined : indexedPaths.get(filePath);
-    if (filePath !== undefined && (previousIndex === undefined || index < previousIndex)) {
-      indexedPaths.set(filePath, index);
+    for (const filePath of paths) {
+      const key = pathKey(filePath);
+      const previous = indexedPaths.get(key);
+      const previousIndex = previous?.[1];
+      if (previousIndex === undefined || index < previousIndex) {
+        indexedPaths.set(key, [filePath, index]);
+      }
     }
   }
   const found: [string, number][] = [];
   await Promise.all(
-    [...indexedPaths].map(([filePath, index]) =>
+    [...indexedPaths.values()].map(([filePath, index]) =>
       limit(async () => {
-        if (await isExistingFile(filePath)) {
+        if (await isExistingPath(filePath)) {
           found.push([filePath, index]);
         }
       }),
     ),
   );
-  return found.toSorted((left, right) => left[1] - right[1]).map(([filePath]) => filePath);
+  const allowed = await filterSearchablePaths(
+    found.map(([filePath]) => filePath),
+    roots,
+    respectIgnore,
+    searchHidden,
+  );
+  return found
+    .toSorted((left, right) => left[1] - right[1])
+    .map(([filePath]) => filePath)
+    .filter((filePath) => allowed.has(filePath));
 }
-export { isExistingFile, toFilePath };

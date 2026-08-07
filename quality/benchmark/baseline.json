@@ -1,8 +1,8 @@
 {
   "fixture": {
-    "files": 614,
-    "pathExpectations": 20,
-    "scenarios": 17
+    "files": 626,
+    "pathExpectations": 25,
+    "scenarios": 21
   },
   "system": {
     "architecture": "x64",
@@ -13,31 +13,31 @@
     "node-v25.8.1": [
       {
         "level": 1,
-        "medianMs": 0.331,
-        "completionRate": 0.3,
+        "medianMs": 0.412,
+        "completionRate": 0.28,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 0.869,
-        "completionRate": 0.7,
+        "medianMs": 1.298,
+        "completionRate": 0.72,
         "falsePositives": 0
       },
       {
         "level": 3,
-        "medianMs": 2.671,
+        "medianMs": 5.615,
         "completionRate": 0.8,
         "falsePositives": 0
       },
       {
         "level": 4,
-        "medianMs": 5.961,
-        "completionRate": 0.9,
+        "medianMs": 12.93,
+        "completionRate": 0.88,
         "falsePositives": 0
       },
       {
         "level": 5,
-        "medianMs": 15.121,
+        "medianMs": 34.276,
         "completionRate": 1,
         "falsePositives": 0
       }
@@ -45,31 +45,31 @@
     "bun-v1.4.0": [
       {
         "level": 1,
-        "medianMs": 0.297,
-        "completionRate": 0.3,
+        "medianMs": 0.484,
+        "completionRate": 0.28,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 0.57,
-        "completionRate": 0.7,
+        "medianMs": 1.103,
+        "completionRate": 0.72,
         "falsePositives": 0
       },
       {
         "level": 3,
-        "medianMs": 2.216,
+        "medianMs": 5.025,
         "completionRate": 0.8,
         "falsePositives": 0
       },
       {
         "level": 4,
-        "medianMs": 5.184,
-        "completionRate": 0.9,
+        "medianMs": 10.819,
+        "completionRate": 0.88,
         "falsePositives": 0
       },
       {
         "level": 5,
-        "medianMs": 15.612,
+        "medianMs": 33.659,
         "completionRate": 1,
         "falsePositives": 0
       }

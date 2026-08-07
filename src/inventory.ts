@@ -1,9 +1,12 @@
-import fastGlob from "fast-glob";
 import nodePath from "node:path";
+import { listSearchEntries } from "./policy.js";
 import type { Candidate } from "./types.js";
 
-function isBoundary(value: string | undefined): boolean {
-  return value === undefined || !/[\p{L}\p{N}_./\\-]/u.test(value);
+function isBoundary(value: string | undefined, following: string | undefined): boolean {
+  if (value === ".") {
+    return following === undefined || !/[\p{L}\p{N}_-]/u.test(following);
+  }
+  return value === undefined || !/[\p{L}\p{N}_/\\-]/u.test(value);
 }
 function addOccurrences(result: Candidate[], seen: Set<string>, text: string, value: string): void {
   const source = process.platform === "win32" ? text.toLowerCase() : text;
@@ -11,7 +14,7 @@ function addOccurrences(result: Candidate[], seen: Set<string>, text: string, va
   let offset = source.indexOf(target);
   while (offset !== -1) {
     const end = offset + target.length;
-    if (isBoundary(text[offset - 1]) && isBoundary(text[end])) {
+    if (isBoundary(text[offset - 1], text[offset]) && isBoundary(text[end], text[end + 1])) {
       const key = `${offset}:${end}:${text.slice(offset, end)}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -19,29 +22,36 @@ function addOccurrences(result: Candidate[], seen: Set<string>, text: string, va
           end,
           kind: "inventory",
           start: offset,
-          value: text.slice(offset, end),
+          value,
         });
       }
     }
     offset = source.indexOf(target, offset + 1);
   }
 }
-export async function inventoryCandidates(text: string, cwd: string): Promise<Candidate[]> {
-  const files = await fastGlob("**/*", {
-    cwd,
-    dot: true,
-    followSymbolicLinks: false,
-    onlyFiles: false,
-    unique: true,
-  });
+export async function inventoryCandidates(
+  text: string,
+  roots: readonly string[],
+  respectIgnore: boolean,
+  searchHidden: boolean,
+): Promise<Candidate[]> {
+  const entries = await Promise.all(
+    roots.map((root) => listSearchEntries(root, respectIgnore, searchHidden)),
+  );
   const result: Candidate[] = [];
   const seen = new Set<string>();
-  for (const relativeFile of files) {
-    addOccurrences(result, seen, text, relativeFile);
-    addOccurrences(result, seen, text, relativeFile.replaceAll("/", nodePath.sep));
-    const absoluteFile = nodePath.resolve(cwd, relativeFile);
-    addOccurrences(result, seen, text, absoluteFile);
-    addOccurrences(result, seen, text, absoluteFile.replaceAll(nodePath.sep, "/"));
+  for (const [rootIndex, relativeEntries] of entries.entries()) {
+    const root = roots[rootIndex];
+    if (root === undefined) {
+      continue;
+    }
+    for (const relativeEntry of relativeEntries) {
+      addOccurrences(result, seen, text, relativeEntry);
+      addOccurrences(result, seen, text, relativeEntry.replaceAll("/", nodePath.sep));
+      const absoluteEntry = nodePath.resolve(root, relativeEntry);
+      addOccurrences(result, seen, text, absoluteEntry);
+      addOccurrences(result, seen, text, absoluteEntry.replaceAll(nodePath.sep, "/"));
+    }
   }
   return result;
 }

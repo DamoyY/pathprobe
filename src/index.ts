@@ -1,16 +1,28 @@
-import nodePath from "node:path";
-import { stat } from "node:fs/promises";
 import { extractCandidates } from "./candidates.js";
-import { settings } from "./config.js";
 import { validateCandidates } from "./filesystem.js";
 import { inventoryCandidates } from "./inventory.js";
-import type { SearchLevel } from "./types.js";
+import { resolveSearchDirectories } from "./policy.js";
+import { settings } from "../config/settings.js";
+import type { SearchLevel, Variables } from "./types.js";
 
 export const MAX_LEVEL = settings.spanWordLimits.length + 3;
-export async function findExistingFilePaths(
+function validateVariables(value: unknown): asserts value is Variables {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.values(value).some((item) => typeof item !== "string")
+  ) {
+    throw new TypeError("variables must be an object of string values");
+  }
+}
+export async function findExistingPaths(
   text: string,
   level: SearchLevel,
-  cwd: string = process.cwd(),
+  directories: readonly string[],
+  variables: Variables = {},
+  respectIgnore: boolean = settings.respectIgnoreByDefault,
+  searchHidden: boolean = settings.searchHiddenByDefault,
 ): Promise<string[]> {
   if (typeof text !== "string") {
     throw new TypeError("text must be a string");
@@ -18,18 +30,18 @@ export async function findExistingFilePaths(
   if (!Number.isInteger(level) || level < 1 || level > MAX_LEVEL) {
     throw new RangeError(`level must be an integer from 1 to ${MAX_LEVEL}`);
   }
-  if (typeof cwd !== "string") {
-    throw new TypeError("cwd must be a string");
+  validateVariables(variables);
+  if (typeof respectIgnore !== "boolean") {
+    throw new TypeError("respectIgnore must be a boolean");
   }
-  const resolvedCwd = nodePath.resolve(cwd);
-  const cwdStats = await stat(resolvedCwd);
-  if (!cwdStats.isDirectory()) {
-    throw new TypeError("cwd must resolve to a directory");
+  if (typeof searchHidden !== "boolean") {
+    throw new TypeError("searchHidden must be a boolean");
   }
+  const roots = await resolveSearchDirectories(directories);
   const candidates = extractCandidates(text, level);
   if (level === MAX_LEVEL) {
-    candidates.push(...(await inventoryCandidates(text, resolvedCwd)));
+    candidates.push(...(await inventoryCandidates(text, roots, respectIgnore, searchHidden)));
   }
-  return validateCandidates(candidates, resolvedCwd);
+  return validateCandidates(candidates, roots, variables, respectIgnore, searchHidden);
 }
-export type { SearchLevel };
+export type { SearchLevel, Variables };

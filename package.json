@@ -1,16 +1,15 @@
 {
   "name": "realpath-text",
   "version": "0.1.0",
-  "description": "Find file paths that actually exist in natural-language text",
+  "description": "Find existing file and directory paths in natural-language text",
   "files": [
-    "dist",
-    "config/settings.yaml"
+    "dist"
   ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/types/src/index.d.ts",
       "import": "./dist/index.mjs"
     }
   },
@@ -27,9 +26,8 @@
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "fast-glob": "latest",
-    "p-limit": "latest",
-    "yaml": "latest"
+    "globby": "latest",
+    "p-limit": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",

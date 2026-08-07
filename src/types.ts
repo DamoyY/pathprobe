@@ -7,8 +7,12 @@ export interface Candidate {
   value: string;
 }
 export interface SearchSettings {
+  ignoreFilePatterns: string[];
   locationSuffixPattern: RegExp;
+  respectIgnoreByDefault: boolean;
+  searchHiddenByDefault: boolean;
   spanWordLimits: number[];
   trailingPunctuation: string;
   validationConcurrency: number;
 }
+export type Variables = Readonly<Record<string, string>>;
