@@ -1,0 +1,13 @@
+# Maximum number of filesystem checks running at once.
+validationConcurrency: 32
+
+# Increasing word limits used by successive text-span levels.
+spanWordLimits:
+  - 3
+  - 24
+
+# File suffixes accepted after paths, such as source locations in diagnostics.
+locationSuffixPattern: '(?::\d+){1,2}$'
+
+# Trailing prose punctuation removed before a filesystem check.
+trailingPunctuation: ".,;:!?，。；：！？、"

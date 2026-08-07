@@ -1,0 +1,45 @@
+{
+  "name": "realpath-text",
+  "version": "0.1.0",
+  "description": "Find file paths that actually exist in natural-language text",
+  "files": [
+    "dist",
+    "config/settings.yaml"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --clean --no-dts --format esm --platform node --sourcemap --tsconfig tsconfig.json && tsc --project config/tsconfig.build.json",
+    "check": "bun run format:check && bun run lint && bun run typecheck",
+    "format": "oxfmt --config config/oxfmt.json .",
+    "format:check": "oxfmt --config config/oxfmt.json --check .",
+    "lint": "oxlint --config config/oxlint.json --tsconfig tsconfig.json .",
+    "prepack": "bun run check && bun run test && bun run build",
+    "test": "bun run build && node --test \"quality/test/*.test.mjs\" && bun test quality/test",
+    "test:benchmark": "bun run build && node quality/benchmark/run.mjs",
+    "test:benchmark:bun": "bun run build && bun quality/benchmark/run.mjs",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "fast-glob": "latest",
+    "p-limit": "latest",
+    "yaml": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "oxfmt": "latest",
+    "oxlint": "latest",
+    "tinybench": "latest",
+    "tsdown": "latest",
+    "typescript": "next"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

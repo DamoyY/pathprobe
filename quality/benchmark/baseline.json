@@ -1,0 +1,78 @@
+{
+  "fixture": {
+    "files": 614,
+    "pathExpectations": 20,
+    "scenarios": 17
+  },
+  "system": {
+    "architecture": "x64",
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "platform": "win32"
+  },
+  "runs": {
+    "node-v25.8.1": [
+      {
+        "level": 1,
+        "medianMs": 0.331,
+        "completionRate": 0.3,
+        "falsePositives": 0
+      },
+      {
+        "level": 2,
+        "medianMs": 0.869,
+        "completionRate": 0.7,
+        "falsePositives": 0
+      },
+      {
+        "level": 3,
+        "medianMs": 2.671,
+        "completionRate": 0.8,
+        "falsePositives": 0
+      },
+      {
+        "level": 4,
+        "medianMs": 5.961,
+        "completionRate": 0.9,
+        "falsePositives": 0
+      },
+      {
+        "level": 5,
+        "medianMs": 15.121,
+        "completionRate": 1,
+        "falsePositives": 0
+      }
+    ],
+    "bun-v1.4.0": [
+      {
+        "level": 1,
+        "medianMs": 0.297,
+        "completionRate": 0.3,
+        "falsePositives": 0
+      },
+      {
+        "level": 2,
+        "medianMs": 0.57,
+        "completionRate": 0.7,
+        "falsePositives": 0
+      },
+      {
+        "level": 3,
+        "medianMs": 2.216,
+        "completionRate": 0.8,
+        "falsePositives": 0
+      },
+      {
+        "level": 4,
+        "medianMs": 5.184,
+        "completionRate": 0.9,
+        "falsePositives": 0
+      },
+      {
+        "level": 5,
+        "medianMs": 15.612,
+        "completionRate": 1,
+        "falsePositives": 0
+      }
+    ]
+  }
+}
