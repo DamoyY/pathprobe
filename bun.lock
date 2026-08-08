@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "path-scout",
+      "name": "pathprobe",
       "dependencies": {
         "fast-glob": "latest",
         "globby": "latest",
