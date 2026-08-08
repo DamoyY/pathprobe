@@ -1,4 +1,7 @@
 import { pathToFileURL } from "node:url";
+import { distractorCases } from "./cases/distractors.mjs";
+import { createPathCases } from "./cases/paths.mjs";
+import { createVariableCases } from "./cases/variables.mjs";
 
 export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
   return [
@@ -25,12 +28,6 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
       feature: "file-url",
       level: 1,
       text: `Import ${pathToFileURL(absolute).href}.`,
-    },
-    {
-      expected: ["config/.env.local"],
-      feature: "environment",
-      level: 2,
-      text: "Load %PROJECT_ROOT%/config/.env.local.",
     },
     {
       expected: ["package.json", "src/index.ts"],
@@ -71,7 +68,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
     {
       expected: ["LICENSE", "release notes final"],
       feature: "direct-inventory",
-      level: 5,
+      level: 6,
       text: "Check LICENSE and release notes final before publishing.",
     },
     {
@@ -91,7 +88,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
         "very long folder name/with a surprisingly descriptive annual planning document.txt",
       ],
       feature: "long-span",
-      level: 4,
+      level: 5,
       text: "Review very long folder name/with a surprisingly descriptive annual planning document.txt tomorrow.",
     },
     {
@@ -115,7 +112,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
     {
       expected: ["reports"],
       feature: "inventory-directory",
-      level: 5,
+      level: 6,
       text: "Review reports before publishing.",
     },
     {
@@ -130,5 +127,8 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
       level: 2,
       text: "Open other/outline before the meeting.",
     },
+    ...createVariableCases(),
+    ...createPathCases(),
+    ...distractorCases,
   ];
 }

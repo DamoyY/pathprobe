@@ -1,7 +1,10 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
+import { fixtureSettings } from "../../config/benchmark.mjs";
+import { additionalFiles } from "./cases/paths.mjs";
 import { createCorpus } from "./corpus.mjs";
+import { createFileTree } from "./tree.mjs";
 
 const primaryFiles = [
   "package.json",
@@ -25,35 +28,21 @@ const primaryFiles = [
   "ignored/global.txt",
   "ignored/git-dir/item.txt",
   ".hidden/secret.txt",
+  ...additionalFiles,
 ];
 
 const secondaryFiles = ["other/outline", "shared/config.json"];
 
-async function createFiles(root, files) {
-  await Promise.all(
-    files.map(async (relative) => {
-      const filePath = nodePath.join(root, relative);
-      await mkdir(nodePath.dirname(filePath), { recursive: true });
-      await writeFile(filePath, relative);
-    }),
-  );
-
-  const noise = Array.from({ length: 600 }, (_, index) =>
-    nodePath.join(root, "noise", `entry-${index}.txt`),
-  );
-  await Promise.all(
-    noise.map(async (filePath) => {
-      await mkdir(nodePath.dirname(filePath), { recursive: true });
-      await writeFile(filePath, "noise");
-    }),
-  );
-}
-
-export async function createFixture() {
+export async function createFixture(options = {}) {
+  const noiseFilesPerRoot = options.noiseFilesPerRoot ?? fixtureSettings.noiseFilesPerRoot;
+  const writeConcurrency = options.writeConcurrency ?? fixtureSettings.writeConcurrency;
   const root = await mkdtemp(nodePath.join(os.tmpdir(), "realpath-text-"));
   const primary = nodePath.join(root, "primary");
   const secondary = nodePath.join(root, "secondary");
-  await Promise.all([createFiles(primary, primaryFiles), createFiles(secondary, secondaryFiles)]);
+  const [primarySummary, secondarySummary] = await Promise.all([
+    createFileTree(primary, primaryFiles, noiseFilesPerRoot, writeConcurrency),
+    createFileTree(secondary, secondaryFiles, noiseFilesPerRoot, writeConcurrency),
+  ]);
   await Promise.all([
     writeFile(nodePath.join(primary, ".gitignore"), "/ignored/git.txt\n/ignored/git-dir/\n"),
     writeFile(nodePath.join(primary, ".ignore"), "/ignored/local.txt\n"),
@@ -73,7 +62,12 @@ export async function createFixture() {
   const absolute = pathFor("src/index.ts");
   const spacedAbsolute = pathFor("reports/quarterly report 2026.txt");
   const escapedAbsolute = absolute.replaceAll("\\", "\\\\");
-  const variables = { PROJECT_ROOT: primary };
+  const variables = {
+    CONFIG_ROOT: "config",
+    PROJECT_ROOT: primary,
+    WORKSPACE_ROOT: primary,
+    "project.root": primary,
+  };
 
   const cases = createCorpus({
     absolute,
@@ -93,6 +87,10 @@ export async function createFixture() {
       "ignored/git-dir/item.txt",
     ],
     globalConfig,
+    stats: {
+      directories: primarySummary.directories + secondarySummary.directories,
+      files: primarySummary.files + secondarySummary.files + 5,
+    },
     pathFor,
     primary,
     root,

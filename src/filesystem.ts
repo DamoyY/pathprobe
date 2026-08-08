@@ -2,10 +2,10 @@ import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
 import { locateExistingPaths } from "./existence.js";
 import { filterSearchablePaths, isWithinRoot } from "./policy.js";
+import { expandVariables } from "./variables.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, Variables } from "./types.js";
 
-const environmentPattern = /%([A-Za-z_][A-Za-z0-9_]*)%|\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?/gu;
 const driveRelativePattern = /^[A-Za-z]:/u;
 const parentSegmentPattern = /(?:^|[\\/])\.\.(?:[\\/]|$)/u;
 type IndexedPath = [filePath: string, candidateIndex: number];
@@ -31,13 +31,6 @@ function trimCandidate(value: string, preserveSyntax: boolean): string {
   }
   return result;
 }
-function expandEnvironment(value: string, variables: Variables): string {
-  return value.replace(environmentPattern, (match, percentName, dollarName) => {
-    const name = percentName ?? dollarName;
-    const replacement = variables[name] ?? process.env[name];
-    return replacement === undefined ? match : replacement;
-  });
-}
 function unescape(value: string): string {
   if (value.startsWith("\\\\") && !value.startsWith("\\\\\\\\")) {
     return value;
@@ -50,7 +43,7 @@ function toPaths(
   variables: Variables,
   preserveSyntax = false,
 ): string[] {
-  let expanded = expandEnvironment(trimCandidate(value, preserveSyntax), variables);
+  let expanded = expandVariables(trimCandidate(value, preserveSyntax), variables);
   if (expanded.startsWith("file://")) {
     try {
       expanded = fileURLToPath(expanded);

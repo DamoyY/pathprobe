@@ -7,7 +7,7 @@ export const settings: SearchSettings = {
   locationSuffixPattern: /(?::\d+){1,2}$/u,
   respectIgnoreByDefault: true,
   searchHiddenByDefault: false,
-  spanWordLimits: [3, 24],
+  spanWordLimits: [3, 8, 24],
   trailingPunctuation: ".,;:!?，。；：！？、",
   validationConcurrency: 32,
 };

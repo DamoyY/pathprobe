@@ -1,5 +1,6 @@
 import type { Candidate, SearchLevel } from "./types.js";
 import { settings } from "../config/settings.js";
+import { variableReferenceSource } from "./variables.js";
 
 const explicitPattern =
   /(?:file:\/\/\/?|[A-Za-z]:[\\/]|\\\\|\/|(?:\.{1,2}|~)[\\/])[^"'`<>()[\]{}\s]+/gu;
@@ -7,9 +8,15 @@ const quotedPattern = /(["'`])(?<value>[^"'`\r\n]+)\1/gu;
 const tokenPattern = /[^\s]+/gu;
 const pathTokenPattern =
   /(?:[\p{L}\p{N}_@%$+~.#[\],-]+[\\/])+(?:[\p{L}\p{N}_@%$+~.#[\],-]+)|[\p{L}\p{N}_@%$+~.#[\],-]+\.[\p{L}\p{N}_@%$-]{1,16}(?::\d+){0,2}/gu;
+const unquotedPathCharacterSource = "[^\"'`<>()[\\]{}\\s]";
+const variablePathPattern = new RegExp(
+  `${variableReferenceSource}(?:[\\\\/]${unquotedPathCharacterSource}+)+`,
+  "giu",
+);
 const clausePattern = /[^\r\n!?！？;；。]+/gu;
 const pathHintPattern =
   /[\\/]|(?:^|[\s"'`])(?:\.{1,2}|~|%[A-Za-z_][A-Za-z0-9_]*%|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)(?:[\\/]|$)|\.[\p{L}\p{N}]{1,16}(?::\d+){0,2}(?:$|[\s,.;:!?，。；：！？、])/u;
+const variableHintPattern = new RegExp(String.raw`${variableReferenceSource}(?:[\\/]|$)`, "iu");
 function add(
   result: Candidate[],
   seen: Set<string>,
@@ -61,7 +68,7 @@ function addSpanMatches(
     const clauseText = clause[0];
     const tokens = [...clauseText.matchAll(tokenPattern)].map((token) => ({
       end: clauseStart + (token.index ?? 0) + token[0].length,
-      hint: Number(pathHintPattern.test(token[0])),
+      hint: Number(pathHintPattern.test(token[0]) || variableHintPattern.test(token[0])),
       start: clauseStart + (token.index ?? 0),
       value: token[0],
     }));
@@ -99,6 +106,7 @@ export function extractCandidates(text: string, level: SearchLevel): Candidate[]
   addQuotedMatches(result, seen, text);
   addMatches(result, seen, text, explicitPattern, "explicit");
   if (level >= 2) {
+    addMatches(result, seen, text, variablePathPattern, "heuristic");
     addMatches(result, seen, text, pathTokenPattern, "heuristic");
   }
   if (level >= 3) {

@@ -1,8 +1,10 @@
 {
   "fixture": {
-    "files": 626,
-    "pathExpectations": 25,
-    "scenarios": 21
+    "directories": 863,
+    "files": 20044,
+    "pathExpectations": 64,
+    "scenarios": 66,
+    "textBytes": 46990
   },
   "system": {
     "architecture": "x64",
@@ -13,65 +15,77 @@
     "node-v25.8.1": [
       {
         "level": 1,
-        "medianMs": 0.465,
-        "completionRate": 0.28,
+        "medianMs": 10.431,
+        "completionRate": 0.25,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 1.311,
-        "completionRate": 0.72,
+        "medianMs": 41.388,
+        "completionRate": 0.797,
         "falsePositives": 0
       },
       {
         "level": 3,
-        "medianMs": 3.294,
-        "completionRate": 0.8,
+        "medianMs": 126.983,
+        "completionRate": 0.891,
         "falsePositives": 0
       },
       {
         "level": 4,
-        "medianMs": 5.303,
-        "completionRate": 0.88,
+        "medianMs": 417.375,
+        "completionRate": 0.906,
         "falsePositives": 0
       },
       {
         "level": 5,
-        "medianMs": 13.507,
-        "completionRate": 1,
+        "medianMs": 890.492,
+        "completionRate": 0.922,
         "falsePositives": 0
+      },
+      {
+        "level": 6,
+        "medianMs": 1581.409,
+        "completionRate": 1,
+        "falsePositives": 2
       }
     ],
     "bun-v1.4.0": [
       {
         "level": 1,
-        "medianMs": 0.435,
-        "completionRate": 0.28,
+        "medianMs": 11.104,
+        "completionRate": 0.25,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 0.917,
-        "completionRate": 0.72,
+        "medianMs": 30.198,
+        "completionRate": 0.797,
         "falsePositives": 0
       },
       {
         "level": 3,
-        "medianMs": 2.844,
-        "completionRate": 0.8,
+        "medianMs": 104.834,
+        "completionRate": 0.891,
         "falsePositives": 0
       },
       {
         "level": 4,
-        "medianMs": 4.458,
-        "completionRate": 0.88,
+        "medianMs": 360.005,
+        "completionRate": 0.906,
         "falsePositives": 0
       },
       {
         "level": 5,
-        "medianMs": 12.26,
-        "completionRate": 1,
+        "medianMs": 805.942,
+        "completionRate": 0.922,
         "falsePositives": 0
+      },
+      {
+        "level": 6,
+        "medianMs": 1433.623,
+        "completionRate": 1,
+        "falsePositives": 2
       }
     ]
   }

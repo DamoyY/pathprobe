@@ -1,0 +1,143 @@
+export const additionalFiles = [
+  "apps/api/server.ts",
+  "apps/web/vite.config.ts",
+  "packages/core/src/parser.ts",
+  "packages/ui/src/Button Group.tsx",
+  "docs/guides/getting started.md",
+  "tools/scripts/release candidate",
+  "artifacts/build output",
+  "assets/icons/logo.final.svg",
+  "database/migrations/20260808_add_users.sql",
+  "examples/hello world/index.js",
+  "services/auth/config.production.json",
+  "tmp/brackets/[final] report.txt",
+  "unicode/研发/路线 图.md",
+  "nested/one/two/three/four/file",
+  "@scope/package/package.json",
+  "CHANGELOG NEXT",
+];
+
+export function createPathCases() {
+  return [
+    {
+      expected: ["apps/api/server.ts"],
+      feature: "application-source",
+      level: 1,
+      text: "Restart ./apps/api/server.ts after the deployment.",
+    },
+    {
+      expected: ["apps/web/vite.config.ts"],
+      feature: "dotted-config",
+      level: 2,
+      text: "The frontend uses apps/web/vite.config.ts.",
+    },
+    {
+      expected: ["packages/core/src/parser.ts"],
+      feature: "monorepo-source",
+      level: 2,
+      text: "Compare packages/core/src/parser.ts with the generated parser.",
+    },
+    {
+      expected: ["packages/ui/src/Button Group.tsx"],
+      feature: "quoted-component",
+      level: 1,
+      text: 'Edit "packages/ui/src/Button Group.tsx" before release.',
+    },
+    {
+      expected: ["docs/guides/getting started.md"],
+      feature: "documentation-spaces",
+      level: 3,
+      text: "Read docs/guides/getting started.md before onboarding.",
+    },
+    {
+      expected: ["tools/scripts/release candidate"],
+      feature: "script-extensionless-spaces",
+      level: 3,
+      text: "Execute tools/scripts/release candidate after validation.",
+    },
+    {
+      expected: ["artifacts/build output"],
+      feature: "artifact-extensionless-spaces",
+      level: 3,
+      text: "Archive artifacts/build output when the job finishes.",
+    },
+    {
+      expected: ["assets/icons/logo.final.svg"],
+      feature: "multiple-extensions",
+      level: 2,
+      text: "Optimize assets/icons/logo.final.svg for distribution.",
+    },
+    {
+      expected: ["database/migrations/20260808_add_users.sql"],
+      feature: "dated-migration",
+      level: 2,
+      text: "Apply database/migrations/20260808_add_users.sql once.",
+    },
+    {
+      expected: ["examples/hello world/index.js"],
+      feature: "quoted-directory-spaces",
+      level: 1,
+      text: 'Run "examples/hello world/index.js" with Node.',
+    },
+    {
+      expected: ["services/auth"],
+      feature: "nested-directory",
+      level: 1,
+      text: "Inspect ./services/auth before changing authentication.",
+    },
+    {
+      expected: ["services/auth/config.production.json"],
+      feature: "production-config",
+      level: 2,
+      text: "Validate services/auth/config.production.json.",
+    },
+    {
+      expected: ["tmp/brackets/[final] report.txt"],
+      feature: "brackets-and-spaces",
+      level: 3,
+      text: "Send tmp/brackets/[final] report.txt to the reviewer.",
+    },
+    {
+      expected: ["unicode/研发/路线 图.md"],
+      feature: "unicode-and-spaces",
+      level: 3,
+      text: "更新 unicode/研发/路线 图.md 后再提交。",
+    },
+    {
+      expected: ["nested/one/two/three/four/file"],
+      feature: "deep-extensionless",
+      level: 2,
+      text: "Move nested/one/two/three/four/file into the archive.",
+    },
+    {
+      expected: ["@scope/package/package.json"],
+      feature: "scoped-package",
+      level: 2,
+      text: "Inspect @scope/package/package.json for its exports.",
+    },
+    {
+      expected: ["apps/api/server.ts"],
+      feature: "duplicate-reference",
+      level: 2,
+      text: "Compare apps/api/server.ts and apps/api/server.ts.",
+    },
+    {
+      expected: ["apps/api/server.ts", "apps/web/vite.config.ts", "packages/core/src/parser.ts"],
+      feature: "multiple-paths-in-clause",
+      level: 2,
+      text: "Review apps/api/server.ts, apps/web/vite.config.ts, and packages/core/src/parser.ts.",
+    },
+    {
+      expected: ["CHANGELOG NEXT"],
+      feature: "inventory-uppercase-spaces",
+      level: 6,
+      text: "Update CHANGELOG NEXT before publishing.",
+    },
+    {
+      expected: ["artifacts"],
+      feature: "inventory-parent-directory",
+      level: 6,
+      text: "Upload artifacts when all jobs pass.",
+    },
+  ];
+}
