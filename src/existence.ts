@@ -2,6 +2,7 @@ import { readdir, stat } from "node:fs/promises";
 import nodePath from "node:path";
 import pLimit from "p-limit";
 import { settings } from "../config/settings.js";
+import type { PathKind } from "./types.js";
 
 const knownFileErrors = new Set([
   "EACCES",
@@ -12,7 +13,6 @@ const knownFileErrors = new Set([
   "EPERM",
   "EINVAL",
 ]);
-type IndexedPath = [filePath: string, candidateIndex: number];
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -24,51 +24,51 @@ function isKnownFileError(error: unknown): boolean {
     knownFileErrors.has(error.code)
   );
 }
-async function isExistingPath(filePath: string): Promise<boolean> {
+async function classifyPath(filePath: string): Promise<PathKind | undefined> {
   try {
     const pathStats = await stat(filePath);
-    return pathStats.isFile() || pathStats.isDirectory();
+    if (pathStats.isFile()) {
+      return "file";
+    }
+    return pathStats.isDirectory() ? "directory" : undefined;
   } catch (error) {
     if (isKnownFileError(error)) {
-      return false;
+      return undefined;
     }
     throw error;
   }
 }
-export async function locateExistingPaths(
-  indexedPaths: readonly IndexedPath[],
+async function classifyAndAdd(found: Map<string, PathKind>, filePath: string): Promise<void> {
+  const kind = await classifyPath(filePath);
+  if (kind !== undefined) {
+    found.set(filePath, kind);
+  }
+}
+export async function classifyExistingPaths(
+  paths: readonly string[],
   roots: readonly string[],
-): Promise<Set<string>> {
-  const found = new Set<string>();
+): Promise<Map<string, PathKind>> {
+  const found = new Map<string, PathKind>();
   const limit = pLimit(settings.validationConcurrency);
-  if (indexedPaths.length < settings.batchValidationThreshold) {
-    await Promise.all(
-      indexedPaths.map(([filePath]) =>
-        limit(async () => {
-          if (await isExistingPath(filePath)) {
-            found.add(filePath);
-          }
-        }),
-      ),
-    );
+  if (paths.length < settings.batchValidationThreshold) {
+    await Promise.all(paths.map((filePath) => limit(() => classifyAndAdd(found, filePath))));
     return found;
   }
   const rootKeys = new Set(roots.map(pathKey));
-  const pathsByParent = new Map<string, { parent: string; paths: IndexedPath[] }>();
-  for (const indexedPath of indexedPaths) {
-    const filePath = indexedPath[0];
+  const pathsByParent = new Map<string, { parent: string; paths: string[] }>();
+  for (const filePath of paths) {
     if (rootKeys.has(pathKey(filePath))) {
-      found.add(filePath);
+      found.set(filePath, "directory");
       continue;
     }
     const parent = nodePath.dirname(filePath);
     const key = pathKey(parent);
     const group = pathsByParent.get(key) ?? { parent, paths: [] };
-    group.paths.push(indexedPath);
+    group.paths.push(filePath);
     pathsByParent.set(key, group);
   }
-  const directPaths: IndexedPath[] = [];
-  const scannedGroups: { parent: string; paths: IndexedPath[] }[] = [];
+  const directPaths: string[] = [];
+  const scannedGroups: { parent: string; paths: string[] }[] = [];
   for (const group of pathsByParent.values()) {
     if (group.paths.length < settings.directoryScanThreshold) {
       directPaths.push(...group.paths);
@@ -77,14 +77,8 @@ export async function locateExistingPaths(
     }
   }
   await Promise.all([
-    ...directPaths.map(([filePath]) =>
-      limit(async () => {
-        if (await isExistingPath(filePath)) {
-          found.add(filePath);
-        }
-      }),
-    ),
-    ...scannedGroups.map(({ parent, paths }) =>
+    ...directPaths.map((filePath) => limit(() => classifyAndAdd(found, filePath))),
+    ...scannedGroups.map(({ parent, paths: groupPaths }) =>
       limit(async () => {
         let entries;
         try {
@@ -97,18 +91,18 @@ export async function locateExistingPaths(
         }
         const entriesByName = new Map(entries.map((entry) => [pathKey(entry.name), entry]));
         await Promise.all(
-          paths.map(async ([filePath]) => {
+          groupPaths.map(async (filePath) => {
             const name = nodePath.basename(filePath);
             const entry = entriesByName.get(pathKey(name));
-            if (entry?.isFile() || entry?.isDirectory()) {
-              found.add(filePath);
+            if (entry?.isFile()) {
+              found.set(filePath, "file");
+            } else if (entry?.isDirectory()) {
+              found.set(filePath, "directory");
             } else if (
               entry !== undefined ||
               (process.platform === "win32" && name.includes(":"))
             ) {
-              if (await isExistingPath(filePath)) {
-                found.add(filePath);
-              }
+              await classifyAndAdd(found, filePath);
             }
           }),
         );

@@ -1,4 +1,14 @@
 export type SearchLevel = number;
+export type PathKind = "directory" | "file";
+export interface PathPosition {
+  end: number;
+  start: number;
+}
+export interface PathMatch {
+  kind: PathKind;
+  path: string;
+  position: PathPosition;
+}
 export type CandidateKind = "explicit" | "heuristic" | "inventory" | "quoted" | "span";
 export interface Candidate {
   end: number;

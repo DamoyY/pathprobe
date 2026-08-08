@@ -3,7 +3,7 @@ import { validateCandidates } from "./filesystem.js";
 import { inventoryCandidates } from "./inventory.js";
 import { resolveSearchDirectories } from "./policy.js";
 import { settings } from "../config/settings.js";
-import type { SearchLevel, Variables } from "./types.js";
+import type { PathMatch, SearchLevel, Variables } from "./types.js";
 
 export const MAX_LEVEL = settings.spanWordLimits.length + 3;
 function validateVariables(value: unknown): asserts value is Variables {
@@ -23,7 +23,7 @@ export async function findExistingPaths(
   variables: Variables = {},
   respectIgnore: boolean = settings.respectIgnoreByDefault,
   searchHidden: boolean = settings.searchHiddenByDefault,
-): Promise<string[]> {
+): Promise<PathMatch[]> {
   if (typeof text !== "string") {
     throw new TypeError("text must be a string");
   }
@@ -44,4 +44,4 @@ export async function findExistingPaths(
   }
   return validateCandidates(candidates, roots, variables, respectIgnore, searchHidden);
 }
-export type { SearchLevel, Variables };
+export type { PathKind, PathMatch, PathPosition, SearchLevel, Variables } from "./types.js";

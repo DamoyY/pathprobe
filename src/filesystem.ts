@@ -1,14 +1,17 @@
 import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
-import { locateExistingPaths } from "./existence.js";
+import { classifyExistingPaths } from "./existence.js";
 import { filterSearchablePaths, isWithinRoot } from "./policy.js";
 import { expandVariables } from "./variables.js";
 import { settings } from "../config/settings.js";
-import type { Candidate, Variables } from "./types.js";
+import type { Candidate, PathMatch, Variables } from "./types.js";
 
 const driveRelativePattern = /^[A-Za-z]:/u;
 const parentSegmentPattern = /(?:^|[\\/])\.\.(?:[\\/]|$)/u;
-type IndexedPath = [filePath: string, candidateIndex: number];
+interface ResolvedCandidate {
+  candidate: Candidate;
+  path: string;
+}
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -91,9 +94,10 @@ export async function validateCandidates(
   variables: Variables,
   respectIgnore: boolean,
   searchHidden: boolean,
-): Promise<string[]> {
-  const indexedPaths = new Map<string, IndexedPath>();
-  for (const [index, candidate] of candidates.entries()) {
+): Promise<PathMatch[]> {
+  const resolvedCandidates: ResolvedCandidate[] = [];
+  const validationPaths = new Map<string, string>();
+  for (const candidate of candidates) {
     const paths = toPaths(
       candidate.value,
       roots,
@@ -101,31 +105,33 @@ export async function validateCandidates(
       candidate.kind === "inventory" || candidate.kind === "quoted",
     );
     for (const filePath of paths) {
-      const key = pathKey(filePath);
-      const previous = indexedPaths.get(key);
-      const previousIndex = previous?.[1];
-      if (previousIndex === undefined || index < previousIndex) {
-        indexedPaths.set(key, [filePath, index]);
-      }
+      resolvedCandidates.push({ candidate, path: filePath });
+      validationPaths.set(pathKey(filePath), filePath);
     }
   }
-  const orderedPaths = [...indexedPaths.values()];
-  let allowed: Set<string>;
-  if (respectIgnore) {
-    allowed = await filterSearchablePaths(
-      orderedPaths.map(([filePath]) => filePath),
-      roots,
-      true,
-      searchHidden,
-    );
-  } else {
-    allowed = await locateExistingPaths(orderedPaths, roots);
-    if (!searchHidden) {
-      allowed = await filterSearchablePaths([...allowed], roots, false, false);
-    }
+  let searchablePaths = [...validationPaths.values()];
+  if (respectIgnore || !searchHidden) {
+    searchablePaths = [
+      ...(await filterSearchablePaths(searchablePaths, roots, respectIgnore, searchHidden)),
+    ];
   }
-  return orderedPaths
-    .toSorted((left, right) => left[1] - right[1])
-    .map(([filePath]) => filePath)
-    .filter((filePath) => allowed.has(filePath));
+  const classifiedPaths = await classifyExistingPaths(searchablePaths, roots);
+  const kindsByPath = new Map(
+    [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
+  );
+  return resolvedCandidates.flatMap(({ candidate, path }) => {
+    const kind = kindsByPath.get(pathKey(path));
+    return kind === undefined
+      ? []
+      : [
+          {
+            kind,
+            path,
+            position: {
+              end: candidate.end,
+              start: candidate.start,
+            },
+          },
+        ];
+  });
 }

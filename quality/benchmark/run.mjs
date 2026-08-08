@@ -39,7 +39,7 @@ const total = fixture.cases.reduce((sum, item) => sum + item.expected.length, 0)
 
 const rows = bench.tasks.map((task, index) => {
   const level = Number(task.name.slice("level ".length));
-  const found = new Set(measured[index] ?? []);
+  const found = new Set((measured[index] ?? []).map((match) => match.path));
   let matched = 0;
   let completedCases = 0;
   for (const item of fixture.cases) {
