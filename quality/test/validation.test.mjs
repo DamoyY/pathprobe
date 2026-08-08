@@ -133,7 +133,7 @@ test("accepts local UNC server aliases", { skip: process.platform !== "win32" },
     aliasValues.map((value) => [
       {
         kind: "file",
-        path: localUncPath(target, "localhost"),
+        path: target,
         position: { end: value.length, start: 0 },
       },
     ]),
@@ -142,8 +142,22 @@ test("accepts local UNC server aliases", { skip: process.platform !== "win32" },
   assert.deepEqual(await findExistingPaths(extended, 1, fixture.directories, {}, false, true), [
     {
       kind: "file",
-      path: localUncPath(target, "localhost", true),
+      path: target,
       position: { end: extended.length, start: 0 },
     },
   ]);
 });
+test(
+  "normalizes UNC search directories to drive paths",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const uncRoot = localUncPath(fixture.primary, "localhost");
+    assert.deepEqual(await findExistingPaths("package.json", 2, [uncRoot], {}, false, true), [
+      {
+        kind: "file",
+        path: fixture.pathFor("package.json"),
+        position: { end: "package.json".length, start: 0 },
+      },
+    ]);
+  },
+);

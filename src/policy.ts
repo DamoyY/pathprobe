@@ -3,6 +3,7 @@ import nodePath from "node:path";
 import fastGlob from "fast-glob";
 import { convertPathToPattern, globby } from "globby";
 import { settings } from "../config/settings.js";
+import { resolveUncPath } from "./unc.js";
 
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
@@ -50,7 +51,11 @@ export async function resolveSearchDirectories(directories: readonly string[]): 
     if (typeof directory !== "string" || directory.length === 0) {
       throw new TypeError("every directory must be a non-empty string");
     }
-    const resolved = nodePath.resolve(directory);
+    const resolvedUnc = resolveUncPath(directory);
+    if (resolvedUnc === undefined || resolvedUnc.length === 0) {
+      throw new TypeError(`${directory} cannot be represented as a drive-based path`);
+    }
+    const resolved = nodePath.resolve(resolvedUnc);
     unique.set(pathKey(resolved), resolved);
   }
   await Promise.all(

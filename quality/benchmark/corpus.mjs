@@ -3,7 +3,7 @@ import { distractorCases } from "./cases/distractors.mjs";
 import { createPathCases } from "./cases/paths.mjs";
 import { createVariableCases } from "./cases/variables.mjs";
 
-export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
+export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbsolute }) {
   return [
     {
       expected: ["src/index.ts"],
@@ -23,6 +23,16 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute }) {
       level: 1,
       text: `The source is at ${absolute}.`,
     },
+    ...(uncAbsolute === undefined
+      ? []
+      : [
+          {
+            expected: ["src/index.ts"],
+            feature: "unc-drive-mapping",
+            level: 1,
+            text: `The network form is ${uncAbsolute}.`,
+          },
+        ]),
     {
       expected: ["src/index.ts"],
       feature: "file-url",

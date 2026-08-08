@@ -30,9 +30,7 @@ const primaryFiles = [
   ".hidden/secret.txt",
   ...additionalFiles,
 ];
-
 const secondaryFiles = ["other/outline", "shared/config.json"];
-
 export async function createFixture(options = {}) {
   const noiseFilesPerRoot = options.noiseFilesPerRoot ?? fixtureSettings.noiseFilesPerRoot;
   const writeConcurrency = options.writeConcurrency ?? fixtureSettings.writeConcurrency;
@@ -54,7 +52,6 @@ export async function createFixture(options = {}) {
     writeFile(globalIgnore, "/ignored/global.txt\n"),
     writeFile(globalConfig, `[core]\n\texcludesFile = ${globalIgnore.replaceAll("\\", "/")}\n`),
   ]);
-
   const pathFor = (relative) =>
     relative.startsWith("@secondary/")
       ? nodePath.resolve(secondary, relative.slice("@secondary/".length))
@@ -62,19 +59,22 @@ export async function createFixture(options = {}) {
   const absolute = pathFor("src/index.ts");
   const spacedAbsolute = pathFor("reports/quarterly report 2026.txt");
   const escapedAbsolute = absolute.replaceAll("\\", "\\\\");
+  const uncAbsolute =
+    process.platform === "win32"
+      ? `\\\\localhost\\${absolute.slice(0, 1)}$${absolute.slice(2)}`
+      : undefined;
   const variables = {
     CONFIG_ROOT: "config",
     PROJECT_ROOT: primary,
     WORKSPACE_ROOT: primary,
     "project.root": primary,
   };
-
   const cases = createCorpus({
     absolute,
     escapedAbsolute,
     spacedAbsolute,
+    uncAbsolute,
   });
-
   return {
     cases,
     directories: [primary, secondary],
@@ -99,7 +99,6 @@ export async function createFixture(options = {}) {
     cleanup: () => rm(root, { force: true, recursive: true }),
   };
 }
-
 export function expectedPaths(fixture) {
   return new Set(
     fixture.cases.flatMap((item) => item.expected.map((relative) => fixture.pathFor(relative))),

@@ -1,7 +1,32 @@
+import { Buffer } from "node:buffer";
 import { isIP } from "node:net";
 import { hostname, networkInterfaces } from "node:os";
+import nodePath from "node:path";
+import koffi from "koffi";
 
 const uncServerSegmentPattern = /^[^\\/:*?"<>|]+$/u;
+const unmappedDriveErrors = new Set([1200, 1201, 1203, 1222, 2250]);
+const errorMoreData = 234;
+const mappingBufferChars = 32_768;
+interface UncPath {
+  canonical: string;
+  server: string;
+  share: string;
+  suffix: string;
+}
+interface DriveMapping {
+  drive: string;
+  remote: string;
+}
+type GetConnectionW = (localName: string, remoteName: Buffer, length: number[]) => number;
+const getConnectionW: GetConnectionW | undefined =
+  process.platform === "win32"
+    ? (koffi
+        .load("mpr.dll")
+        .func(
+          "uint32_t WNetGetConnectionW(const char16_t *lpLocalName, _Out_ char16_t *lpRemoteName, _Inout_ uint32_t *lpnLength)",
+        ) as GetConnectionW)
+    : undefined;
 function normalizeServerName(value: string): string {
   return value.replace(/\.+$/u, "").toLowerCase();
 }
@@ -36,32 +61,32 @@ function collectLocalServerNames(): Set<string> {
   addLocalServerName(names, "--1.ipv6-literal.net");
   return names;
 }
-const localServerNames = collectLocalServerNames();
+const localServerNames =
+  process.platform === "win32" ? collectLocalServerNames() : new Set<string>();
+let driveMappings: DriveMapping[] | undefined;
 function containsControlCharacter(value: string): boolean {
   return [...value].some((character) => character.charCodeAt(0) < 32);
 }
-export function resolveLocalUncPath(value: string): string | undefined {
-  if (process.platform !== "win32" || !value.startsWith("\\\\")) {
-    return value;
-  }
-  if (containsControlCharacter(value)) {
-    return undefined;
-  }
-  const extended = value.slice(0, 8).toLowerCase() === "\\\\?\\unc\\";
-  if (value.startsWith("\\\\.\\") || (value.startsWith("\\\\?\\") && !extended)) {
+function normalizeUncRoot(value: string): string {
+  return value.replaceAll("/", "\\").replace(/\\+$/u, "").toLowerCase();
+}
+function parseUncPath(value: string): UncPath | undefined {
+  const normalized = value.replaceAll("/", "\\");
+  const extended = normalized.slice(0, 8).toLowerCase() === "\\\\?\\unc\\";
+  if (normalized.startsWith("\\\\.\\") || (normalized.startsWith("\\\\?\\") && !extended)) {
     return undefined;
   }
   const serverStart = extended ? 8 : 2;
-  const serverSeparator = value.slice(serverStart).search(/[\\/]/u);
+  const serverSeparator = normalized.slice(serverStart).indexOf("\\");
   if (serverSeparator <= 0) {
     return undefined;
   }
   const serverEnd = serverStart + serverSeparator;
   const shareStart = serverEnd + 1;
-  const shareSeparator = value.slice(shareStart).search(/[\\/]/u);
-  const shareEnd = shareSeparator === -1 ? value.length : shareStart + shareSeparator;
-  const server = value.slice(serverStart, serverEnd);
-  const share = value.slice(shareStart, shareEnd);
+  const shareSeparator = normalized.slice(shareStart).indexOf("\\");
+  const shareEnd = shareSeparator === -1 ? normalized.length : shareStart + shareSeparator;
+  const server = normalized.slice(serverStart, serverEnd);
+  const share = normalized.slice(shareStart, shareEnd);
   if (
     share.length === 0 ||
     !uncServerSegmentPattern.test(server) ||
@@ -69,13 +94,87 @@ export function resolveLocalUncPath(value: string): string | undefined {
   ) {
     return undefined;
   }
-  const normalizedServer = normalizeServerName(server);
-  const isLoopback =
-    (isIP(server) === 4 && server.split(".")[0] === "127") ||
-    normalizedServer === "--1.ipv6-literal.net";
-  if (!isLoopback && !localServerNames.has(normalizedServer)) {
+  const suffix = normalized.slice(shareEnd);
+  return {
+    canonical: `\\\\${server}\\${share}${suffix}`,
+    server,
+    share,
+    suffix,
+  };
+}
+function queryDriveMapping(drive: string): string | undefined {
+  if (getConnectionW === undefined) {
     return undefined;
   }
-  const prefix = extended ? "\\\\?\\UNC\\" : "\\\\";
-  return `${prefix}localhost${value.slice(serverEnd)}`;
+  const buffer = Buffer.alloc(mappingBufferChars * 2);
+  const length = [mappingBufferChars];
+  const result = getConnectionW(drive, buffer, length);
+  if (result === errorMoreData) {
+    throw new Error(`WNetGetConnectionW returned an oversized mapping for ${drive}`);
+  }
+  if (unmappedDriveErrors.has(result)) {
+    return undefined;
+  }
+  if (result !== 0) {
+    throw new Error(`WNetGetConnectionW failed for ${drive} with error ${result}`);
+  }
+  const remote = koffi.decode(buffer, "char16_t", mappingBufferChars);
+  if (typeof remote !== "string" || !remote.startsWith("\\\\")) {
+    throw new TypeError(`WNetGetConnectionW returned an invalid mapping for ${drive}`);
+  }
+  return normalizeUncRoot(remote);
+}
+function queryDriveMappings(): DriveMapping[] {
+  if (driveMappings !== undefined) {
+    return driveMappings;
+  }
+  const result: DriveMapping[] = [];
+  for (let code = "A".charCodeAt(0); code <= "Z".charCodeAt(0); code += 1) {
+    const drive = `${String.fromCharCode(code)}:`;
+    const remote = queryDriveMapping(drive);
+    if (remote !== undefined) {
+      result.push({ drive, remote });
+    }
+  }
+  driveMappings = result.toSorted((left, right) => right.remote.length - left.remote.length);
+  return driveMappings;
+}
+function resolveMappedUncPath(path: UncPath): string | undefined {
+  const canonical = normalizeUncRoot(path.canonical);
+  const mapping = queryDriveMappings().find(
+    ({ remote }) => canonical === remote || canonical.startsWith(`${remote}\\`),
+  );
+  if (mapping === undefined) {
+    return undefined;
+  }
+  const relative = path.canonical.slice(mapping.remote.length);
+  return nodePath.win32.normalize(`${mapping.drive}${relative}`);
+}
+function isLocalServer(value: string): boolean {
+  const normalized = normalizeServerName(value);
+  return (
+    localServerNames.has(normalized) ||
+    (isIP(value) === 4 && value.split(".")[0] === "127") ||
+    normalized === "--1.ipv6-literal.net"
+  );
+}
+function resolveLocalAdministrativeShare(path: UncPath): string | undefined {
+  const match = /^([A-Za-z])\$$/u.exec(path.share);
+  if (match === null || !isLocalServer(path.server)) {
+    return undefined;
+  }
+  return nodePath.win32.normalize(`${match[1]}:${path.suffix || "\\"}`);
+}
+export function resolveUncPath(value: string): string | undefined {
+  if (process.platform !== "win32" || (!value.startsWith("\\\\") && !value.startsWith("//"))) {
+    return value;
+  }
+  if (containsControlCharacter(value)) {
+    return undefined;
+  }
+  const path = parseUncPath(value);
+  if (path === undefined) {
+    return undefined;
+  }
+  return resolveMappedUncPath(path) ?? resolveLocalAdministrativeShare(path);
 }

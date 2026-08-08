@@ -1,6 +1,12 @@
 # pathprobe
 
-`pathprobe` 用于从自然语言文本中识别并验证真实存在的文件或目录路径。
+`pathprobe` 用于从一段文本中找出其中提到的、真实存在于文件系统中的文件或目录路径。
+
+## 安装
+
+```bash
+npm install pathprobe
+```
 
 ## 基本用法
 
@@ -9,8 +15,8 @@ import { findExistingPaths } from "pathprobe";
 
 const matches = await findExistingPaths(
   `
-  Please check ./src/index.ts
-  and C:\\projects\\demo\\README.md:10:5
+  请检查 src/index.ts:12
+  以及 "./config/settings.json"
   `,
   2,
   [process.cwd()],
@@ -27,19 +33,15 @@ console.log(matches);
     kind: "file",
     path: "/project/src/index.ts",
     position: {
-      start: 16,
-      end: 30,
+      start: 8,
+      end: 20,
+    },
+    location: {
+      line: 12,
     },
   },
 ];
 ```
-
-每个匹配项包含：
-
-- `path`：解析后的绝对路径
-- `kind`：`"file"` 或 `"directory"`
-- `position`：路径在原始文本中的字符范围
-- `location`：可选的行号、列号信息
 
 ## API
 
@@ -54,100 +56,101 @@ findExistingPaths(
 ): Promise<PathMatch[]>
 ```
 
-### `text`
+参数说明：
 
-需要扫描的文本。
+- `text`：需要扫描的文本。
+- `level`：搜索强度，值越高，识别越宽松。
+- `directories`：解析相对路径时使用的搜索目录。
+- `variables`：可选的变量值。
+- `respectIgnore`：是否遵守 `.gitignore` 等忽略规则。
+- `searchHidden`：是否搜索隐藏文件和目录。
 
-### `level`
+`directories` 中的目录必须真实存在。
 
-搜索等级。等级越高，识别范围越宽，但需要进行的文件系统搜索也越多。
+## 搜索级别
 
-可通过以下方式获取当前最高等级：
+级别越高，能够识别更多自然文本中的路径，也可能产生更多文件系统检查。
+
+可通过：
 
 ```ts
 import { MAX_LEVEL } from "pathprobe";
 ```
 
-### `directories`
+获取当前最高级别。
 
-用于解析相对路径的搜索根目录。
+## 路径位置
 
-```ts
-await findExistingPaths(text, 2, [process.cwd(), "/another/project"]);
+路径后可以附带行号或行列号：
+
+```text
+src/index.ts:42
+src/index.ts:42:8
 ```
 
-### `variables`
-
-可选的变量值：
+匹配结果会包含：
 
 ```ts
-await findExistingPaths("$PROJECT/src/index.ts", 2, [process.cwd()], {
-  PROJECT: "/home/user/project",
+{
+  location: {
+    line: 42,
+    column: 8,
+  }
+}
+```
+
+同时，`position.start` 和 `position.end` 表示路径在原始文本中的字符范围。
+
+## 变量展开
+
+可以在文本中使用常见的变量表达式：
+
+```text
+$HOME/project/file.txt
+${HOME}/project/file.txt
+$env:HOME/project/file.txt
+%HOME%\project\file.txt
+{{ HOME }}/project/file.txt
+${{ env.HOME }}/project/file.txt
+```
+
+也可以自行提供变量：
+
+```ts
+await findExistingPaths("$PROJECT_ROOT/src/index.ts", 2, [process.cwd()], {
+  PROJECT_ROOT: "/projects/demo",
 });
 ```
 
-支持多种常见写法，例如：
+未显式提供的变量会尝试从 `process.env` 中读取。
+
+## Windows / UNC
+
+在 Windows 上，`pathprobe` 可以处理：
 
 ```text
-$HOME/project
-${HOME}/project
-$env:HOME/project
-%HOME%\project
-!HOME!\project
-{{ HOME }}/project
-${{ env.HOME }}/project
-$(HOME)/project
-@HOME@/project
+\\server\share\project\file.txt
 ```
 
-未显式提供的变量也会尝试从 `process.env` 中读取。
+对于映射到本机盘符的网络共享，以及本机管理共享（如 `\\localhost\C$\...`），会尽可能转换成可由本机文件系统验证的路径。
 
-### `respectIgnore`
+无法映射为本地可访问路径的 UNC 地址会被忽略。
 
-是否遵守 Git ignore 规则及配置的 ignore 文件。
-
-默认值由库配置决定。
-
-### `searchHidden`
-
-是否搜索隐藏文件和隐藏目录。
-
-默认值由库配置决定。
-
-## 支持的路径形式
-
-例如：
-
-```text
-./src/index.ts
-../config/settings.json
-~/Documents/test.txt
-/usr/local/bin/tool
-C:\Users\me\project\README.md
-\\localhost\share\file.txt
-file:///tmp/example.txt
-src/index.ts:42
-src/index.ts:42:8
-"$HOME/My Project/file.txt"
-```
-
-路径只有在文件系统中实际存在时才会出现在最终结果中。
-
-## TypeScript 类型
-
-库同时导出：
+## 返回类型
 
 ```ts
-import type {
-  PathKind,
-  PathLocation,
-  PathMatch,
-  PathPosition,
-  SearchLevel,
-  Variables,
-} from "pathprobe";
+interface PathMatch {
+  kind: "file" | "directory";
+  path: string;
+  position: {
+    start: number;
+    end: number;
+  };
+  location?: {
+    line: number;
+    column?: number;
+  };
+}
 ```
 
-## 注意事项
-
-在 Windows 上，UNC 路径仅会解析指向本机的共享路径，以避免意外访问远程网络位置。
+`pathprobe` 只返回经过文件系统验证、当前真实存在的文件或目录。

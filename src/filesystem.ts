@@ -3,7 +3,7 @@ import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
 import { filterSearchablePaths } from "./policy.js";
 import { expandVariables } from "./variables/index.js";
-import { resolveLocalUncPath } from "./unc.js";
+import { resolveUncPath } from "./unc.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, PathLocation, PathMatch, PathPosition, Variables } from "./types.js";
 
@@ -116,11 +116,11 @@ function toPaths(value: string, roots: readonly string[], variables: Variables):
       );
     }
   }
-  const localUncPath = resolveLocalUncPath(expanded);
-  if (localUncPath === undefined || localUncPath.length === 0) {
+  const resolvedPath = resolveUncPath(expanded);
+  if (resolvedPath === undefined || resolvedPath.length === 0) {
     return [];
   }
-  expanded = localUncPath;
+  expanded = resolvedPath;
   if (nodePath.isAbsolute(expanded)) {
     return [nodePath.normalize(expanded)];
   }
