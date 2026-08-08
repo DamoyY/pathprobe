@@ -1,5 +1,5 @@
 {
-  "name": "realpath-text",
+  "name": "path-scout",
   "version": "0.1.0",
   "description": "Find existing file and directory paths in natural-language text",
   "files": [

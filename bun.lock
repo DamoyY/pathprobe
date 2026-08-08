@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "realpath-text",
+      "name": "path-scout",
       "dependencies": {
         "fast-glob": "latest",
         "globby": "latest",
