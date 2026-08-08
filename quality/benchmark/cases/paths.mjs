@@ -116,7 +116,7 @@ export function createPathCases() {
       text: "Inspect @scope/package/package.json for its exports.",
     },
     {
-      expected: ["apps/api/server.ts"],
+      expected: ["apps/api/server.ts", "apps/api/server.ts"],
       feature: "duplicate-reference",
       level: 2,
       text: "Compare apps/api/server.ts and apps/api/server.ts.",
@@ -130,13 +130,13 @@ export function createPathCases() {
     {
       expected: ["CHANGELOG NEXT"],
       feature: "inventory-uppercase-spaces",
-      level: 6,
+      level: 5,
       text: "Update CHANGELOG NEXT before publishing.",
     },
     {
       expected: ["artifacts"],
       feature: "inventory-parent-directory",
-      level: 6,
+      level: 5,
       text: "Upload artifacts when all jobs pass.",
     },
   ];

@@ -1,10 +1,21 @@
 import { pathToFileURL } from "node:url";
 import { distractorCases } from "./cases/distractors.mjs";
+import { createEdgeCases } from "./cases/edge-cases.mjs";
 import { createPathCases } from "./cases/paths.mjs";
 import { createVariableCases } from "./cases/variables.mjs";
+import { createWorkloadCases } from "./cases/workloads.mjs";
 
-export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbsolute }) {
-  return [
+function categorize(category, cases) {
+  return cases.map((item) => ({ ...item, category }));
+}
+export function createCorpus({
+  absolute,
+  escapedAbsolute,
+  nativeRelative,
+  spacedAbsolute,
+  uncAbsolute,
+}) {
+  const syntaxCases = [
     {
       expected: ["src/index.ts"],
       feature: "explicit-relative",
@@ -78,7 +89,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbs
     {
       expected: ["LICENSE", "release notes final"],
       feature: "direct-inventory",
-      level: 6,
+      level: 5,
       text: "Check LICENSE and release notes final before publishing.",
     },
     {
@@ -98,7 +109,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbs
         "very long folder name/with a surprisingly descriptive annual planning document.txt",
       ],
       feature: "long-span",
-      level: 5,
+      level: 4,
       text: "Review very long folder name/with a surprisingly descriptive annual planning document.txt tomorrow.",
     },
     {
@@ -122,7 +133,7 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbs
     {
       expected: ["reports"],
       feature: "inventory-directory",
-      level: 6,
+      level: 5,
       text: "Review reports before publishing.",
     },
     {
@@ -137,8 +148,21 @@ export function createCorpus({ absolute, escapedAbsolute, spacedAbsolute, uncAbs
       level: 2,
       text: "Open other/outline before the meeting.",
     },
-    ...createVariableCases(),
-    ...createPathCases(),
-    ...distractorCases,
+  ];
+  return [
+    ...categorize("syntax", syntaxCases),
+    ...categorize("variables", createVariableCases()),
+    ...categorize("repository", createPathCases()),
+    ...categorize(
+      "workloads",
+      createWorkloadCases({
+        absolute,
+        absoluteFileUrl: pathToFileURL(absolute).href,
+        escapedAbsolute,
+        spacedFileUrl: pathToFileURL(spacedAbsolute).href,
+      }),
+    ),
+    ...categorize("edge", createEdgeCases({ nativeRelative })),
+    ...categorize("adversarial", distractorCases),
   ];
 }

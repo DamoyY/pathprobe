@@ -1,10 +1,19 @@
 {
   "fixture": {
-    "directories": 863,
-    "files": 20044,
-    "pathExpectations": 64,
-    "scenarios": 66,
-    "textBytes": 46990
+    "directories": 874,
+    "files": 20059,
+    "pathExpectations": 99,
+    "scenarios": 94,
+    "textBytes": 61455,
+    "categories": {
+      "syntax": 21,
+      "variables": 18,
+      "repository": 20,
+      "workloads": 10,
+      "edge": 11,
+      "adversarial": 13,
+      "background": 1
+    }
   },
   "system": {
     "architecture": "x64",
@@ -15,77 +24,85 @@
     "node-v25.8.1": [
       {
         "level": 1,
-        "medianMs": 10.431,
-        "completionRate": 0.25,
+        "medianMs": 17.26,
+        "precision": 1,
+        "recall": 0.242,
+        "scenarioPassRate": 0.34,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 41.388,
-        "completionRate": 0.797,
-        "falsePositives": 0
+        "medianMs": 54.415,
+        "precision": 0.792,
+        "recall": 0.808,
+        "scenarioPassRate": 0.585,
+        "falsePositives": 21
       },
       {
         "level": 3,
-        "medianMs": 126.983,
-        "completionRate": 0.891,
-        "falsePositives": 0
+        "medianMs": 167.988,
+        "precision": 0.805,
+        "recall": 0.919,
+        "scenarioPassRate": 0.691,
+        "falsePositives": 22
       },
       {
         "level": 4,
-        "medianMs": 417.375,
-        "completionRate": 0.906,
-        "falsePositives": 0
+        "medianMs": 245.575,
+        "precision": 0.809,
+        "recall": 0.939,
+        "scenarioPassRate": 0.713,
+        "falsePositives": 22
       },
       {
         "level": 5,
-        "medianMs": 890.492,
-        "completionRate": 0.922,
-        "falsePositives": 0
-      },
-      {
-        "level": 6,
-        "medianMs": 1581.409,
-        "completionRate": 1,
-        "falsePositives": 2
+        "medianMs": 1091.325,
+        "precision": 0.222,
+        "recall": 1,
+        "scenarioPassRate": 0.713,
+        "falsePositives": 346
       }
     ],
     "bun-v1.4.0": [
       {
         "level": 1,
-        "medianMs": 11.104,
-        "completionRate": 0.25,
+        "medianMs": 9.47,
+        "precision": 1,
+        "recall": 0.242,
+        "scenarioPassRate": 0.34,
         "falsePositives": 0
       },
       {
         "level": 2,
-        "medianMs": 30.198,
-        "completionRate": 0.797,
-        "falsePositives": 0
+        "medianMs": 39.593,
+        "precision": 0.792,
+        "recall": 0.808,
+        "scenarioPassRate": 0.585,
+        "falsePositives": 21
       },
       {
         "level": 3,
-        "medianMs": 104.834,
-        "completionRate": 0.891,
-        "falsePositives": 0
+        "medianMs": 179.083,
+        "precision": 0.805,
+        "recall": 0.919,
+        "scenarioPassRate": 0.691,
+        "falsePositives": 22
       },
       {
         "level": 4,
-        "medianMs": 360.005,
-        "completionRate": 0.906,
-        "falsePositives": 0
+        "medianMs": 260.655,
+        "precision": 0.809,
+        "recall": 0.939,
+        "scenarioPassRate": 0.713,
+        "falsePositives": 22
       },
       {
         "level": 5,
-        "medianMs": 805.942,
-        "completionRate": 0.922,
-        "falsePositives": 0
-      },
-      {
-        "level": 6,
-        "medianMs": 1433.623,
-        "completionRate": 1,
-        "falsePositives": 2
+        "medianMs": 1071.152,
+        "precision": 0.222,
+        "recall": 1,
+        "scenarioPassRate": 0.713,
+        "falsePositives": 346
       }
     ]
   }

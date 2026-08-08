@@ -2,10 +2,14 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
 import { fixtureSettings } from "../../config/benchmark.mjs";
+import { edgeFiles } from "./cases/edge-cases.mjs";
 import { additionalFiles } from "./cases/paths.mjs";
+import { workloadFiles } from "./cases/workloads.mjs";
 import { createCorpus } from "./corpus.mjs";
+import { countPaths } from "./path-counts.mjs";
 import { createFileTree } from "./tree.mjs";
 
+export { countPaths };
 const primaryFiles = [
   "package.json",
   "src/index.ts",
@@ -29,6 +33,8 @@ const primaryFiles = [
   "ignored/git-dir/item.txt",
   ".hidden/secret.txt",
   ...additionalFiles,
+  ...workloadFiles,
+  ...edgeFiles,
 ];
 const secondaryFiles = ["other/outline", "shared/config.json"];
 export async function createFixture(options = {}) {
@@ -72,6 +78,7 @@ export async function createFixture(options = {}) {
   const cases = createCorpus({
     absolute,
     escapedAbsolute,
+    nativeRelative: ["services", "auth", "config.production.json"].join(nodePath.sep),
     spacedAbsolute,
     uncAbsolute,
   });
@@ -99,8 +106,8 @@ export async function createFixture(options = {}) {
     cleanup: () => rm(root, { force: true, recursive: true }),
   };
 }
-export function expectedPaths(fixture) {
-  return new Set(
+export function expectedPathCounts(fixture) {
+  return countPaths(
     fixture.cases.flatMap((item) => item.expected.map((relative) => fixture.pathFor(relative))),
   );
 }

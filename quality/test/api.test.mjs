@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
-import { createFixture, expectedPaths } from "../benchmark/fixture.mjs";
+import { countPaths, createFixture, expectedPathCounts } from "../benchmark/fixture.mjs";
 
 let fixture;
 before(async () => {
@@ -12,13 +12,14 @@ after(async () => {
 });
 test("finds every expected path at the highest level", async () => {
   const text = fixture.cases.map((item) => item.text).join("\n");
-  const found = new Set(
+  const found = countPaths(
     (
       await findExistingPaths(text, MAX_LEVEL, fixture.directories, fixture.variables, false, true)
     ).map((match) => match.path),
   );
-  for (const expected of expectedPaths(fixture)) {
-    assert.ok(found.has(expected), expected);
+  const expected = expectedPathCounts(fixture);
+  for (const [filePath, count] of expected) {
+    assert.ok((found.get(filePath) ?? 0) >= count, filePath);
   }
 });
 test("finds each feature by its documented minimum level", async () => {
@@ -28,9 +29,10 @@ test("finds each feature by its documented minimum level", async () => {
     ),
   );
   for (const [index, item] of fixture.cases.entries()) {
-    const found = new Set(results[index]?.map((match) => match.path));
-    for (const relative of item.expected) {
-      assert.ok(found.has(fixture.pathFor(relative)), item.feature);
+    const found = countPaths((results[index] ?? []).map((match) => match.path));
+    const expected = countPaths(item.expected.map((relative) => fixture.pathFor(relative)));
+    for (const [filePath, count] of expected) {
+      assert.ok((found.get(filePath) ?? 0) >= count, item.feature);
     }
   }
 });
