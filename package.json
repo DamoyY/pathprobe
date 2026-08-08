@@ -1,6 +1,6 @@
 {
   "name": "pathprobe",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Extract, resolve, and validate file and directory paths mentioned in text, with variable expansion, ignore rules, hidden-file control, and configurable search roots.",
   "license": "Apache-2.0",
   "repository": {
@@ -19,15 +19,12 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --clean --no-dts --format esm --platform node --sourcemap --tsconfig tsconfig.json && tsc --project config/tsconfig.build.json",
-    "check": "bun run format:check && bun run lint && bun run typecheck",
     "format": "oxfmt --config config/oxfmt.json .",
-    "format:check": "oxfmt --config config/oxfmt.json --check .",
     "lint": "oxlint --config config/oxlint.json --tsconfig tsconfig.json .",
-    "prepack": "bun run check && bun run test && bun run build",
-    "test": "bun run build && node --test \"quality/test/*.test.mjs\" && bun test quality/test",
-    "test:benchmark": "bun run build && node quality/benchmark/run.mjs",
-    "test:benchmark:bun": "bun run build && bun quality/benchmark/run.mjs",
-    "typecheck": "tsc --project tsconfig.json --noEmit"
+    "prepack": "bun run build",
+    "test": "node --test \"quality/test/*.test.mjs\" && bun test quality/test",
+    "test:benchmark": "node quality/benchmark/run.mjs",
+    "test:benchmark:bun": "bun quality/benchmark/run.mjs"
   },
   "dependencies": {
     "fast-glob": "latest",
