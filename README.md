@@ -1,8 +1,8 @@
 # pathprobe
 
-`pathprobe` 用于从自然语言、日志、报错信息或其他文本中识别路径。
+`pathprobe` 用于从自然语言、日志、错误信息或其他文本中找出真实存在于文件系统中的文件和目录路径。
 
-它支持绝对路径、相对路径、`file://` URL、环境变量形式的路径，以及较宽松的文本路径匹配，并可选择遵循 `.gitignore` 等忽略规则。
+它支持显式路径、相对路径、带环境变量的路径、被引号包裹的路径，以及更宽松的文本片段匹配；还可以遵循 `.gitignore` 等忽略规则。
 
 ## 使用
 
@@ -10,10 +10,7 @@
 import { findExistingPaths } from "pathprobe";
 
 const matches = await findExistingPaths(
-  `
-  Please check src/index.ts and "./src/types.ts".
-  The config may also be under $HOME/project/config.json.
-  `,
+  "配置文件位于 ./config/settings.json，请检查后再启动。",
   2,
   [process.cwd()],
 );
@@ -27,16 +24,20 @@ console.log(matches);
 [
   {
     kind: "file",
-    path: "/project/src/index.ts",
+    path: "/project/config/settings.json",
     position: {
-      start: 16,
+      start: 6,
       end: 28,
     },
   },
 ];
 ```
 
-`position` 表示原始文本中匹配内容的起止位置。
+其中：
+
+- `kind`：路径类型，`file` 或 `directory`
+- `path`：解析后的绝对路径
+- `position`：原始文本中匹配内容的起止位置
 
 ## API
 
@@ -51,64 +52,60 @@ findExistingPaths(
 ): Promise<PathMatch[]>
 ```
 
-参数：
+### `text`
 
-- `text`：需要扫描的文本。
-- `level`：搜索级别，范围为 `1` 到 `MAX_LEVEL`。
-- `directories`：允许搜索的根目录。相对路径只会在这些目录中解析。
-- `variables`：可选的变量值，例如 `{ PROJECT_ROOT: "/work/app" }`。
-- `respectIgnore`：是否遵循 Git ignore 等忽略规则。
-- `searchHidden`：是否搜索隐藏文件和目录。
+需要搜索的文本。
 
-## 搜索级别
+### `level`
 
-搜索级别越高，识别范围越宽。
-较高等级通常能找到更多路径，但也会增加文件系统扫描工作量。
+搜索强度，从 `1` 开始。级别越高，识别范围越宽，同时可能需要更多文件系统扫描。
 
-## 变量路径
-
-支持多种常见变量写法，例如：
-
-```text
-$HOME/project/file.txt
-${HOME}/project/file.txt
-${{ env.HOME }}/project/file.txt
-{{ PROJECT_ROOT }}/src
-%USERPROFILE%\project
-$env:USERPROFILE\project
-```
-
-也可以显式传入变量：
+可以通过导出的 `MAX_LEVEL` 获取当前支持的最高级别：
 
 ```ts
-await findExistingPaths("$PROJECT_ROOT/src/index.ts", 2, ["/workspace"], {
+import { MAX_LEVEL } from "pathprobe";
+```
+
+### `directories`
+
+用于解析相对路径的搜索根目录，可指定多个：
+
+```ts
+const matches = await findExistingPaths(text, 2, [process.cwd(), "/another/project"]);
+```
+
+相对路径会分别基于这些目录进行解析。
+
+### `variables`
+
+可选的变量值：
+
+```ts
+await findExistingPaths("打开 $PROJECT_ROOT/src/index.ts", 2, [process.cwd()], {
   PROJECT_ROOT: "/workspace/project",
 });
 ```
 
+支持多种常见变量写法。
+
 未在 `variables` 中提供的变量会尝试从 `process.env` 获取。
 
-## 安全范围
+### `respectIgnore`
 
-`pathprobe` 只返回位于指定 `directories` 范围内的路径。
+是否遵循忽略规则。
 
-例如：
+启用后，搜索目录中的 `.gitignore` 等规则可以阻止被忽略的路径出现在结果中。
+
+### `searchHidden`
+
+是否搜索隐藏文件和隐藏目录。
+
+## 类型
+
+主要类型均可直接导入：
 
 ```ts
-await findExistingPaths("../../etc/passwd", 2, ["/workspace/project"]);
+import type { PathKind, PathMatch, PathPosition, SearchLevel, Variables } from "pathprobe";
 ```
 
-即使目标文件存在，只要解析结果超出了允许的根目录，也不会作为匹配结果返回。
-
-## 返回类型
-
-```ts
-interface PathMatch {
-  kind: "file" | "directory";
-  path: string;
-  position: {
-    start: number;
-    end: number;
-  };
-}
-```
+`pathprobe` 不负责读取文件内容；它只负责从文本中发现路径、解析路径并确认对应文件或目录是否存在。

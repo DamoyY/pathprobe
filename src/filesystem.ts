@@ -1,19 +1,24 @@
 import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
-import { filterSearchablePaths, isWithinRoot } from "./policy.js";
+import { filterSearchablePaths } from "./policy.js";
 import { expandVariables } from "./variables.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, PathMatch, Variables } from "./types.js";
 
-const driveRelativePattern = /^[A-Za-z]:/u;
-const parentSegmentPattern = /(?:^|[\\/])\.\.(?:[\\/]|$)/u;
 interface ResolvedCandidate {
   candidate: Candidate;
   path: string;
 }
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
+}
+function uniquePaths(values: Iterable<string>): string[] {
+  const paths = new Map<string, string>();
+  for (const value of values) {
+    paths.set(pathKey(value), value);
+  }
+  return [...paths.values()];
 }
 function trimCandidate(value: string, preserveSyntax: boolean): string {
   let result = preserveSyntax ? value : value.trim();
@@ -73,20 +78,9 @@ function toPaths(
     return [];
   }
   if (nodePath.isAbsolute(expanded)) {
-    const absolute = nodePath.normalize(expanded);
-    return roots.some((root) => isWithinRoot(absolute, root)) ? [absolute] : [];
+    return [nodePath.normalize(expanded)];
   }
-  const paths = roots.map((root) => nodePath.resolve(root, expanded));
-  if (
-    !parentSegmentPattern.test(expanded) &&
-    !(process.platform === "win32" && driveRelativePattern.test(expanded))
-  ) {
-    return paths;
-  }
-  return paths.filter((filePath, index) => {
-    const root = roots[index];
-    return root !== undefined && isWithinRoot(filePath, root);
-  });
+  return uniquePaths(roots.map((root) => nodePath.resolve(root, expanded)));
 }
 export async function validateCandidates(
   candidates: Candidate[],

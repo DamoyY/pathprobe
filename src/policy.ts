@@ -7,7 +7,7 @@ import { settings } from "../config/settings.js";
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
-export function isWithinRoot(filePath: string, root: string): boolean {
+function isWithinRoot(filePath: string, root: string): boolean {
   const relative = nodePath.relative(root, filePath);
   return (
     relative === "" ||
@@ -81,10 +81,12 @@ export async function filterSearchablePaths(
   const allowed = new Set<string>();
   const pathsByRoot = new Map<string, string[]>();
   for (const filePath of paths) {
+    let hasSearchRoot = false;
     for (const root of roots) {
       if (!isWithinRoot(filePath, root)) {
         continue;
       }
+      hasSearchRoot = true;
       const relative = nodePath.relative(root, filePath);
       if (!searchHidden && isHidden(relative)) {
         continue;
@@ -96,6 +98,13 @@ export async function filterSearchablePaths(
         grouped.push(relative);
         pathsByRoot.set(root, grouped);
       }
+    }
+    if (hasSearchRoot) {
+      continue;
+    }
+    const filesystemRelative = nodePath.relative(nodePath.parse(filePath).root, filePath);
+    if (searchHidden || !isHidden(filesystemRelative)) {
+      allowed.add(filePath);
     }
   }
   await Promise.all(

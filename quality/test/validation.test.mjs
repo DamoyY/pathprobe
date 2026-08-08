@@ -29,28 +29,27 @@ test("rejects invalid search directories", async () => {
     TypeError,
   );
 });
-test("restricts absolute paths to the search directories", async () => {
-  const found = await findExistingPaths(
-    `"${fixture.root}"`,
-    1,
-    fixture.directories,
-    {},
-    false,
-    true,
-  );
-  assert.deepEqual(found, []);
+test("allows absolute paths outside the search directories", async () => {
+  const found = await findExistingPaths(`"${fixture.root}"`, 1, fixture.directories);
+  assert.deepEqual(found, [
+    {
+      kind: "directory",
+      path: fixture.root,
+      position: { end: fixture.root.length + 1, start: 1 },
+    },
+  ]);
 });
-test("restricts relative paths to the search directories", async () => {
+test("allows relative paths to resolve outside the search directories", async () => {
   const relative = nodePath.relative(fixture.primary, fixture.root);
-  const found = await findExistingPaths(
-    `"${nodePath.join(relative, "global.ignore")}"`,
-    1,
-    fixture.directories,
-    {},
-    false,
-    true,
-  );
-  assert.deepEqual(found, []);
+  const value = nodePath.join(relative, "global.ignore");
+  const found = await findExistingPaths(`"${value}"`, 1, fixture.directories);
+  assert.deepEqual(found, [
+    {
+      kind: "file",
+      path: nodePath.join(fixture.root, "global.ignore"),
+      position: { end: value.length + 1, start: 1 },
+    },
+  ]);
 });
 test("allows the search directories themselves", async () => {
   const found = await findExistingPaths(
