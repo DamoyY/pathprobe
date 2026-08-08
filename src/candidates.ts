@@ -1,6 +1,6 @@
 import type { Candidate, SearchLevel } from "./types.js";
 import { settings } from "../config/settings.js";
-import { variableReferenceSource } from "./variables.js";
+import { variableReferenceSource } from "./variables/index.js";
 
 const explicitPattern =
   /(?:file:\/\/\/?|[A-Za-z]:[\\/]|\\\\|\/|(?:\.{1,2}|~)[\\/])[^"'`<>()[\]{}\s]+/gu;

@@ -1,4 +1,4 @@
-import type { Variables } from "./types.js";
+import type { Variables } from "../types.js";
 
 const nameSource = String.raw`[A-Za-z_][A-Za-z0-9_.-]*`;
 export const variableReferenceSource = String.raw`(?:\$\{\{\s*(?:(?:env|vars|variables)[.:])?${nameSource}\s*\}\}|\{\{\s*${nameSource}\s*\}\}|\$\{(?:env[.:])?${nameSource}\}|\$env:${nameSource}|\$[A-Za-z_][A-Za-z0-9_]*|%${nameSource}%|!${nameSource}!|\$\(\s*${nameSource}\s*\)|@${nameSource}@)`;

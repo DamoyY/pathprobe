@@ -2,7 +2,8 @@ import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
 import { filterSearchablePaths } from "./policy.js";
-import { expandVariables } from "./variables.js";
+import { expandVariables } from "./variables/index.js";
+import { resolveLocalUncPath } from "./unc.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, PathLocation, PathMatch, PathPosition, Variables } from "./types.js";
 
@@ -115,9 +116,11 @@ function toPaths(value: string, roots: readonly string[], variables: Variables):
       );
     }
   }
-  if (expanded.length === 0) {
+  const localUncPath = resolveLocalUncPath(expanded);
+  if (localUncPath === undefined || localUncPath.length === 0) {
     return [];
   }
+  expanded = localUncPath;
   if (nodePath.isAbsolute(expanded)) {
     return [nodePath.normalize(expanded)];
   }

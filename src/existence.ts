@@ -13,15 +13,22 @@ const knownFileErrors = new Set([
   "EPERM",
   "EINVAL",
 ]);
+const unverifiableUncErrors = new Set(["UNKNOWN", "EUNKNOWN"]);
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
-function isKnownFileError(error: unknown): boolean {
+function fileErrorCode(error: unknown): string | undefined {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+  return undefined;
+}
+function isKnownFileError(error: unknown, filePath?: string): boolean {
+  const code = fileErrorCode(error);
   return (
-    error instanceof Error &&
-    "code" in error &&
-    typeof error.code === "string" &&
-    knownFileErrors.has(error.code)
+    code !== undefined &&
+    (knownFileErrors.has(code) ||
+      (filePath?.startsWith("\\\\") === true && unverifiableUncErrors.has(code)))
   );
 }
 async function classifyPath(filePath: string): Promise<PathKind | undefined> {
@@ -32,7 +39,7 @@ async function classifyPath(filePath: string): Promise<PathKind | undefined> {
     }
     return pathStats.isDirectory() ? "directory" : undefined;
   } catch (error) {
-    if (isKnownFileError(error)) {
+    if (isKnownFileError(error, filePath)) {
       return undefined;
     }
     throw error;
@@ -84,7 +91,7 @@ export async function classifyExistingPaths(
         try {
           entries = await readdir(parent, { withFileTypes: true });
         } catch (error) {
-          if (isKnownFileError(error)) {
+          if (isKnownFileError(error, parent)) {
             return;
           }
           throw error;
