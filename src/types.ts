@@ -4,8 +4,13 @@ export interface PathPosition {
   end: number;
   start: number;
 }
+export interface PathLocation {
+  column?: number;
+  line: number;
+}
 export interface PathMatch {
   kind: PathKind;
+  location?: PathLocation;
   path: string;
   position: PathPosition;
 }

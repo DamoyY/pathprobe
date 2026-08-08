@@ -7,7 +7,7 @@ const explicitPattern =
 const quotedPattern = /(["'`])(?<value>[^"'`\r\n]+)\1/gu;
 const tokenPattern = /[^\s]+/gu;
 const pathTokenPattern =
-  /(?:[\p{L}\p{N}_@%$+~.#[\],-]+[\\/])+(?:[\p{L}\p{N}_@%$+~.#[\],-]+)|[\p{L}\p{N}_@%$+~.#[\],-]+\.[\p{L}\p{N}_@%$-]{1,16}(?::\d+){0,2}/gu;
+  /(?:(?:[\p{L}\p{N}_@%$+~.#[\],-]+[\\/])+(?:[\p{L}\p{N}_@%$+~.#[\],-]+)|[\p{L}\p{N}_@%$+~.#[\],-]+\.[\p{L}\p{N}_@%$-]{1,16})(?::\d+){0,2}/gu;
 const unquotedPathCharacterSource = "[^\"'`<>()[\\]{}\\s]";
 const variablePathPattern = new RegExp(
   `${variableReferenceSource}(?:[\\\\/]${unquotedPathCharacterSource}+)+`,

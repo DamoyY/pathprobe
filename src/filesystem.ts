@@ -4,11 +4,17 @@ import { classifyExistingPaths } from "./existence.js";
 import { filterSearchablePaths } from "./policy.js";
 import { expandVariables } from "./variables.js";
 import { settings } from "../config/settings.js";
-import type { Candidate, PathMatch, Variables } from "./types.js";
+import type { Candidate, PathLocation, PathMatch, PathPosition, Variables } from "./types.js";
 
 interface ResolvedCandidate {
-  candidate: Candidate;
+  location?: PathLocation;
   path: string;
+  position: PathPosition;
+}
+interface PreparedCandidate {
+  location?: PathLocation;
+  position: PathPosition;
+  value: string;
 }
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
@@ -20,24 +26,64 @@ function uniquePaths(values: Iterable<string>): string[] {
   }
   return [...paths.values()];
 }
-function trimCandidate(value: string, preserveSyntax: boolean): string {
-  let result = preserveSyntax ? value : value.trim();
-  if (
-    result.length >= 2 &&
-    ((result[0] === '"' && result.at(-1) === '"') ||
-      (result[0] === "'" && result.at(-1) === "'") ||
-      (result[0] === "`" && result.at(-1) === "`"))
-  ) {
-    result = result.slice(1, -1);
-  }
-  if (!preserveSyntax) {
-    while (result.length > 0 && settings.trailingPunctuation.includes(result.at(-1) ?? "")) {
-      result = result.slice(0, -1);
-    }
-
-    result = result.replace(settings.locationSuffixPattern, "");
+function parseLocationPart(value: string, name: string): number {
+  const result = Number(value);
+  if (!Number.isSafeInteger(result)) {
+    throw new RangeError(`${name} must be a safe integer`);
   }
   return result;
+}
+function prepareCandidate(candidate: Candidate): PreparedCandidate {
+  let end = candidate.end;
+  let start = candidate.start;
+  let value = candidate.value;
+  if (candidate.kind !== "inventory" && candidate.kind !== "quoted") {
+    const startTrimmed = value.trimStart();
+    start += value.length - startTrimmed.length;
+    value = startTrimmed;
+    const endTrimmed = value.trimEnd();
+    end -= value.length - endTrimmed.length;
+    value = endTrimmed;
+    if (
+      value.length >= 2 &&
+      ((value[0] === '"' && value.at(-1) === '"') ||
+        (value[0] === "'" && value.at(-1) === "'") ||
+        (value[0] === "`" && value.at(-1) === "`"))
+    ) {
+      start += 1;
+      end -= 1;
+      value = value.slice(1, -1);
+    }
+    while (value.length > 0 && settings.trailingPunctuation.includes(value.at(-1) ?? "")) {
+      end -= 1;
+      value = value.slice(0, -1);
+    }
+  }
+  if (candidate.kind === "inventory") {
+    return { position: { end, start }, value };
+  }
+  const match = settings.locationSuffixPattern.exec(value);
+  if (match === null) {
+    return { position: { end, start }, value };
+  }
+  const lineValue = match.groups?.line;
+  if (lineValue === undefined) {
+    throw new TypeError("locationSuffixPattern must capture a line");
+  }
+  const columnValue = match.groups?.column;
+  const location: PathLocation =
+    columnValue === undefined
+      ? { line: parseLocationPart(lineValue, "line") }
+      : {
+          column: parseLocationPart(columnValue, "column"),
+          line: parseLocationPart(lineValue, "line"),
+        };
+  end -= match[0].length;
+  return {
+    location,
+    position: { end, start },
+    value: value.slice(0, match.index),
+  };
 }
 function unescape(value: string): string {
   if (value.startsWith("\\\\") && !value.startsWith("\\\\\\\\")) {
@@ -45,13 +91,8 @@ function unescape(value: string): string {
   }
   return value.replace(/\\(["'`\\])/gu, "$1").replace(/\\\\/gu, "\\");
 }
-function toPaths(
-  value: string,
-  roots: readonly string[],
-  variables: Variables,
-  preserveSyntax = false,
-): string[] {
-  let expanded = expandVariables(trimCandidate(value, preserveSyntax), variables);
+function toPaths(value: string, roots: readonly string[], variables: Variables): string[] {
+  let expanded = expandVariables(value, variables);
   if (expanded.startsWith("file://")) {
     try {
       expanded = fileURLToPath(expanded);
@@ -82,6 +123,18 @@ function toPaths(
   }
   return uniquePaths(roots.map((root) => nodePath.resolve(root, expanded)));
 }
+function mergeLocation(match: PathMatch, location: PathLocation | undefined): void {
+  if (location === undefined) {
+    return;
+  }
+  if (match.location === undefined) {
+    match.location = location;
+    return;
+  }
+  if (match.location.line !== location.line || match.location.column !== location.column) {
+    throw new Error("Candidates for the same path and position have conflicting locations");
+  }
+}
 export async function validateCandidates(
   candidates: Candidate[],
   roots: readonly string[],
@@ -92,14 +145,14 @@ export async function validateCandidates(
   const resolvedCandidates: ResolvedCandidate[] = [];
   const validationPaths = new Map<string, string>();
   for (const candidate of candidates) {
-    const paths = toPaths(
-      candidate.value,
-      roots,
-      variables,
-      candidate.kind === "inventory" || candidate.kind === "quoted",
-    );
+    const prepared = prepareCandidate(candidate);
+    const paths = toPaths(prepared.value, roots, variables);
     for (const filePath of paths) {
-      resolvedCandidates.push({ candidate, path: filePath });
+      resolvedCandidates.push({
+        ...(prepared.location === undefined ? {} : { location: prepared.location }),
+        path: filePath,
+        position: prepared.position,
+      });
       validationPaths.set(pathKey(filePath), filePath);
     }
   }
@@ -113,19 +166,24 @@ export async function validateCandidates(
   const kindsByPath = new Map(
     [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
   );
-  return resolvedCandidates.flatMap(({ candidate, path }) => {
+  const matches = new Map<string, PathMatch>();
+  for (const { location, path, position } of resolvedCandidates) {
     const kind = kindsByPath.get(pathKey(path));
-    return kind === undefined
-      ? []
-      : [
-          {
-            kind,
-            path,
-            position: {
-              end: candidate.end,
-              start: candidate.start,
-            },
-          },
-        ];
-  });
+    if (kind === undefined) {
+      continue;
+    }
+    const key = `${pathKey(path)}\0${position.start}\0${position.end}`;
+    const existing = matches.get(key);
+    if (existing !== undefined) {
+      mergeLocation(existing, location);
+      continue;
+    }
+    matches.set(key, {
+      kind,
+      ...(location === undefined ? {} : { location }),
+      path,
+      position,
+    });
+  }
+  return [...matches.values()];
 }

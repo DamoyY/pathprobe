@@ -4,7 +4,7 @@ export const settings: SearchSettings = {
   batchValidationThreshold: 48,
   directoryScanThreshold: 2,
   ignoreFilePatterns: ["**/.ignore", "**/.rgignore"],
-  locationSuffixPattern: /(?::\d+){1,2}$/u,
+  locationSuffixPattern: /:(?<line>\d+)(?::(?<column>\d+))?$/u,
   respectIgnoreByDefault: true,
   searchHiddenByDefault: false,
   spanWordLimits: [3, 8, 24],

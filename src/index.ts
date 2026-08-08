@@ -44,4 +44,11 @@ export async function findExistingPaths(
   }
   return validateCandidates(candidates, roots, variables, respectIgnore, searchHidden);
 }
-export type { PathKind, PathMatch, PathPosition, SearchLevel, Variables } from "./types.js";
+export type {
+  PathKind,
+  PathLocation,
+  PathMatch,
+  PathPosition,
+  SearchLevel,
+  Variables,
+} from "./types.js";

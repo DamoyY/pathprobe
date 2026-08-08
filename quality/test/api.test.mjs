@@ -74,6 +74,43 @@ test("preserves repeated path occurrences", async () => {
     ],
   );
 });
+test("returns locations and merges matches by path and position", async () => {
+  const text = "src/index.ts:12:4";
+  const found = await findExistingPaths(text, MAX_LEVEL, fixture.directories, {}, false, true);
+  assert.deepEqual(
+    found.filter((match) => match.path === fixture.pathFor("src/index.ts")),
+    [
+      {
+        kind: "file",
+        location: { column: 4, line: 12 },
+        path: fixture.pathFor("src/index.ts"),
+        position: { end: 12, start: 0 },
+      },
+    ],
+  );
+});
+test("returns line-only locations for explicit and quoted references", async () => {
+  const references = [
+    { level: 2, line: 18, pathEnd: 14, text: "./src/index.ts:18", textStart: 0 },
+    { level: 1, line: 9, pathEnd: 13, text: '"src/index.ts:9"', textStart: 1 },
+  ];
+  const results = await Promise.all(
+    references.map((reference) =>
+      findExistingPaths(reference.text, reference.level, fixture.directories, {}, false, true),
+    ),
+  );
+  assert.deepEqual(
+    results,
+    references.map((reference) => [
+      {
+        kind: "file",
+        location: { line: reference.line },
+        path: fixture.pathFor("src/index.ts"),
+        position: { end: reference.pathEnd, start: reference.textStart },
+      },
+    ]),
+  );
+});
 test("uses additional variables", async () => {
   const text = "Load %PROJECT_ROOT%/config/.env.local.";
   const withoutVariables = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
