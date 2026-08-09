@@ -93,7 +93,7 @@ test(
         downstreamEntry,
         [
           `import { findExistingPaths } from ${JSON.stringify(entrySpecifier)};`,
-          `await findExistingPaths(${JSON.stringify("\\\\pathprobe.invalid\\share\\missing")}, 1, [process.cwd()]);`,
+          `await findExistingPaths({ directories: [process.cwd()], level: 1, text: ${JSON.stringify("\\\\pathprobe.invalid\\share\\missing")} });`,
           "",
         ].join("\n"),
       );

@@ -13,14 +13,14 @@ npm install pathprobe
 ```ts
 import { findExistingPaths } from "pathprobe";
 
-const matches = await findExistingPaths(
-  `
+const matches = await findExistingPaths({
+  text: `
   请检查 src/index.ts:12
   以及 "./config/settings.json"
   `,
-  2,
-  [process.cwd()],
-);
+  level: 2,
+  directories: [process.cwd()],
+});
 
 console.log(matches);
 ```
@@ -46,14 +46,14 @@ console.log(matches);
 ## API
 
 ```ts
-findExistingPaths(
+findExistingPaths({
   text,
   level,
   directories,
   variables?,
   respectIgnore?,
   searchHidden?,
-): Promise<PathMatch[]>
+}): Promise<PathMatch[]>
 ```
 
 参数说明：
@@ -117,8 +117,13 @@ ${{ env.HOME }}/project/file.txt
 也可以自行提供变量：
 
 ```ts
-await findExistingPaths("$PROJECT_ROOT/src/index.ts", 2, [process.cwd()], {
-  PROJECT_ROOT: "/projects/demo",
+await findExistingPaths({
+  text: "$PROJECT_ROOT/src/index.ts",
+  level: 2,
+  directories: [process.cwd()],
+  variables: {
+    PROJECT_ROOT: "/projects/demo",
+  },
 });
 ```
 

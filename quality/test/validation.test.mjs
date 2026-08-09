@@ -6,6 +6,9 @@ import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";
 
 let fixture;
+function find(text, level, options = {}) {
+  return findExistingPaths({ directories: fixture.directories, level, text, ...options });
+}
 function localUncPath(filePath, server, extended = false) {
   const { root } = nodePath.parse(filePath);
   if (!/^[A-Za-z]:\\$/u.test(root)) {
@@ -21,25 +24,27 @@ after(async () => {
   await fixture.cleanup();
 });
 test("rejects invalid input levels", async () => {
-  await assert.rejects(findExistingPaths("package.json", 0, fixture.directories), RangeError);
-  await assert.rejects(
-    findExistingPaths("package.json", MAX_LEVEL + 1, fixture.directories),
-    RangeError,
-  );
-  await assert.rejects(findExistingPaths("package.json", 1.5, fixture.directories), RangeError);
+  await assert.rejects(find("package.json", 0), RangeError);
+  await assert.rejects(find("package.json", MAX_LEVEL + 1), RangeError);
+  await assert.rejects(find("package.json", 1.5), RangeError);
 });
 test("rejects invalid search directories", async () => {
-  await assert.rejects(findExistingPaths("package.json", 1, []), RangeError);
-  await assert.rejects(findExistingPaths("package.json", 1, [fixture.pathFor("missing")]), {
-    code: "ENOENT",
-  });
+  await assert.rejects(find("package.json", 1, { directories: [] }), RangeError);
   await assert.rejects(
-    findExistingPaths("package.json", 1, [fixture.pathFor("package.json")]),
+    find("package.json", 1, {
+      directories: [fixture.pathFor("missing")],
+    }),
+    {
+      code: "ENOENT",
+    },
+  );
+  await assert.rejects(
+    find("package.json", 1, { directories: [fixture.pathFor("package.json")] }),
     TypeError,
   );
 });
 test("allows absolute paths outside the search directories", async () => {
-  const found = await findExistingPaths(`"${fixture.root}"`, 1, fixture.directories);
+  const found = await find(`"${fixture.root}"`, 1);
   assert.deepEqual(found, [
     {
       kind: "directory",
@@ -51,7 +56,7 @@ test("allows absolute paths outside the search directories", async () => {
 test("allows relative paths to resolve outside the search directories", async () => {
   const relative = nodePath.relative(fixture.primary, fixture.root);
   const value = nodePath.join(relative, "global.ignore");
-  const found = await findExistingPaths(`"${value}"`, 1, fixture.directories);
+  const found = await find(`"${value}"`, 1);
   assert.deepEqual(found, [
     {
       kind: "file",
@@ -61,14 +66,10 @@ test("allows relative paths to resolve outside the search directories", async ()
   ]);
 });
 test("allows the search directories themselves", async () => {
-  const found = await findExistingPaths(
-    `"${fixture.primary}"`,
-    1,
-    fixture.directories,
-    {},
-    false,
-    true,
-  );
+  const found = await find(`"${fixture.primary}"`, 1, {
+    respectIgnore: false,
+    searchHidden: true,
+  });
   assert.deepEqual(found, [
     {
       kind: "directory",
@@ -78,15 +79,10 @@ test("allows the search directories themselves", async () => {
   ]);
 });
 test("rejects invalid variables and boolean controls", async () => {
-  await assert.rejects(findExistingPaths("package.json", 1, fixture.directories, []), TypeError);
-  await assert.rejects(
-    findExistingPaths("package.json", 1, fixture.directories, {}, "yes"),
-    TypeError,
-  );
-  await assert.rejects(
-    findExistingPaths("package.json", 1, fixture.directories, {}, true, 1),
-    TypeError,
-  );
+  await assert.rejects(findExistingPaths(null), TypeError);
+  await assert.rejects(find("package.json", 1, { variables: [] }), TypeError);
+  await assert.rejects(find("package.json", 1, { respectIgnore: "yes" }), TypeError);
+  await assert.rejects(find("package.json", 1, { searchHidden: 1 }), TypeError);
 });
 test(
   "rejects remote UNC paths before filesystem probing",
@@ -103,21 +99,16 @@ test(
     ];
     assert.deepEqual(
       await Promise.all(
-        remotePaths.map((value) =>
-          findExistingPaths(value, 1, fixture.directories, {}, false, true),
-        ),
+        remotePaths.map((value) => find(value, 1, { respectIgnore: false, searchHidden: true })),
       ),
       remotePaths.map(() => []),
     );
     assert.deepEqual(
-      await findExistingPaths(
-        '"$SERVER/share/file"',
-        1,
-        fixture.directories,
-        { SERVER: "\\\\203.0.113.1" },
-        false,
-        true,
-      ),
+      await find('"$SERVER/share/file"', 1, {
+        respectIgnore: false,
+        searchHidden: true,
+        variables: { SERVER: "\\\\203.0.113.1" },
+      }),
       [],
     );
   },
@@ -128,7 +119,7 @@ test("accepts local UNC server aliases", { skip: process.platform !== "win32" },
   const aliasValues = [...aliases].map((alias) => localUncPath(target, alias));
   assert.deepEqual(
     await Promise.all(
-      aliasValues.map((value) => findExistingPaths(value, 1, fixture.directories, {}, false, true)),
+      aliasValues.map((value) => find(value, 1, { respectIgnore: false, searchHidden: true })),
     ),
     aliasValues.map((value) => [
       {
@@ -139,7 +130,7 @@ test("accepts local UNC server aliases", { skip: process.platform !== "win32" },
     ]),
   );
   const extended = localUncPath(target, "127.0.0.1", true);
-  assert.deepEqual(await findExistingPaths(extended, 1, fixture.directories, {}, false, true), [
+  assert.deepEqual(await find(extended, 1, { respectIgnore: false, searchHidden: true }), [
     {
       kind: "file",
       path: target,
@@ -152,12 +143,19 @@ test(
   { skip: process.platform !== "win32" },
   async () => {
     const uncRoot = localUncPath(fixture.primary, "localhost");
-    assert.deepEqual(await findExistingPaths("package.json", 2, [uncRoot], {}, false, true), [
-      {
-        kind: "file",
-        path: fixture.pathFor("package.json"),
-        position: { end: "package.json".length, start: 0 },
-      },
-    ]);
+    assert.deepEqual(
+      await find("package.json", 2, {
+        directories: [uncRoot],
+        respectIgnore: false,
+        searchHidden: true,
+      }),
+      [
+        {
+          kind: "file",
+          path: fixture.pathFor("package.json"),
+          position: { end: "package.json".length, start: 0 },
+        },
+      ],
+    );
   },
 );

@@ -24,7 +24,7 @@
     "node-v25.8.1": [
       {
         "level": 1,
-        "medianMs": 18.581,
+        "medianMs": 20.709,
         "precision": 1,
         "recall": 0.242,
         "scenarioPassRate": 0.34,
@@ -32,7 +32,7 @@
       },
       {
         "level": 2,
-        "medianMs": 55.831,
+        "medianMs": 58.229,
         "precision": 0.792,
         "recall": 0.808,
         "scenarioPassRate": 0.585,
@@ -40,7 +40,7 @@
       },
       {
         "level": 3,
-        "medianMs": 192.894,
+        "medianMs": 179.47,
         "precision": 0.805,
         "recall": 0.919,
         "scenarioPassRate": 0.691,
@@ -48,7 +48,7 @@
       },
       {
         "level": 4,
-        "medianMs": 307.213,
+        "medianMs": 246.736,
         "precision": 0.809,
         "recall": 0.939,
         "scenarioPassRate": 0.713,
@@ -56,17 +56,17 @@
       },
       {
         "level": 5,
-        "medianMs": 432.457,
-        "precision": 0.222,
-        "recall": 1,
-        "scenarioPassRate": 0.713,
-        "falsePositives": 346
+        "medianMs": 440.311,
+        "precision": 0.815,
+        "recall": 0.98,
+        "scenarioPassRate": 0.745,
+        "falsePositives": 22
       }
     ],
     "bun-v1.4.0": [
       {
         "level": 1,
-        "medianMs": 9.793,
+        "medianMs": 11.275,
         "precision": 1,
         "recall": 0.242,
         "scenarioPassRate": 0.34,
@@ -74,7 +74,7 @@
       },
       {
         "level": 2,
-        "medianMs": 31.609,
+        "medianMs": 32.219,
         "precision": 0.792,
         "recall": 0.808,
         "scenarioPassRate": 0.585,
@@ -82,7 +82,7 @@
       },
       {
         "level": 3,
-        "medianMs": 139.029,
+        "medianMs": 138.452,
         "precision": 0.805,
         "recall": 0.919,
         "scenarioPassRate": 0.691,
@@ -90,7 +90,7 @@
       },
       {
         "level": 4,
-        "medianMs": 202.815,
+        "medianMs": 207.696,
         "precision": 0.809,
         "recall": 0.939,
         "scenarioPassRate": 0.713,
@@ -98,11 +98,11 @@
       },
       {
         "level": 5,
-        "medianMs": 409.658,
-        "precision": 0.222,
-        "recall": 1,
-        "scenarioPassRate": 0.713,
-        "falsePositives": 346
+        "medianMs": 385.587,
+        "precision": 0.815,
+        "recall": 0.98,
+        "scenarioPassRate": 0.745,
+        "falsePositives": 22
       }
     ]
   }

@@ -18,7 +18,14 @@ try {
     fixture.pathFor,
   );
   const find = (level) =>
-    findExistingPaths(document.text, level, fixture.directories, fixture.variables, false, true);
+    findExistingPaths({
+      directories: fixture.directories,
+      level,
+      respectIgnore: false,
+      searchHidden: true,
+      text: document.text,
+      variables: fixture.variables,
+    });
   const bench = new Bench({
     iterations: benchmarkSettings.iterations,
     time: benchmarkSettings.timeMilliseconds,

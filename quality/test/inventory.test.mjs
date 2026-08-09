@@ -5,6 +5,15 @@ import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";
 
 let fixture;
+function find(text) {
+  return findExistingPaths({
+    directories: fixture.directories,
+    level: MAX_LEVEL,
+    respectIgnore: false,
+    searchHidden: true,
+    text,
+  });
+}
 before(async () => {
   fixture = await createFixture();
 });
@@ -14,7 +23,7 @@ after(async () => {
 test("matches a punctuated inventory path within an absolute path", async () => {
   const filePath = fixture.pathFor("design/(approved)/spec.md");
   const text = `Review ${filePath} before fabrication.`;
-  const found = await findExistingPaths(text, MAX_LEVEL, fixture.directories, {}, false, true);
+  const found = await find(text);
   assert.ok(
     found.some(
       (match) =>
@@ -23,39 +32,51 @@ test("matches a punctuated inventory path within an absolute path", async () => 
         match.position.end === "Review ".length + filePath.length,
     ),
   );
+  assert.ok(found.every((match) => match.path !== fixture.pathFor("design")));
 });
 test("preserves inventory occurrences and rejects path-like affixes", async () => {
-  const text = "preartifacts artifacts artifacts-post artifacts";
-  const filePath = fixture.pathFor("artifacts");
-  const found = await findExistingPaths(text, MAX_LEVEL, fixture.directories, {}, false, true);
+  const text = "preLICENSE LICENSE LICENSE-post LICENSE";
+  const filePath = fixture.pathFor("LICENSE");
+  const found = await find(text);
   assert.deepEqual(
     found.filter((match) => match.path === filePath).map((match) => match.position),
     [
-      { end: 22, start: 13 },
-      { end: 47, start: 38 },
+      { end: 18, start: 11 },
+      { end: 39, start: 32 },
     ],
+  );
+});
+test("requires a marker for directories but not files", async () => {
+  const text = "docs docs/ ./docs LICENSE";
+  const found = await find(text);
+  assert.deepEqual(
+    found
+      .filter((match) => match.path === fixture.pathFor("docs"))
+      .toSorted((left, right) => left.position.start - right.position.start)
+      .map((match) => ({
+        kind: match.kind,
+        text: text.slice(match.position.start, match.position.end),
+      })),
+    [
+      { kind: "directory", text: "docs/" },
+      { kind: "directory", text: "./docs" },
+    ],
+  );
+  assert.ok(
+    found.some(
+      (match) =>
+        match.kind === "file" &&
+        match.path === fixture.pathFor("LICENSE") &&
+        text.slice(match.position.start, match.position.end) === "LICENSE",
+    ),
   );
 });
 test("rebuilds the inventory matcher when directory entries change", async () => {
   const text = "cache refresh target";
   const filePath = fixture.pathFor(text);
-  const initialMatches = await findExistingPaths(
-    text,
-    MAX_LEVEL,
-    fixture.directories,
-    {},
-    false,
-    true,
-  );
+  const initialMatches = await find(text);
   assert.ok(initialMatches.every((match) => match.path !== filePath));
   await writeFile(filePath, "");
-  const updatedMatches = await findExistingPaths(
-    text,
-    MAX_LEVEL,
-    fixture.directories,
-    {},
-    false,
-    true,
-  );
+  const updatedMatches = await find(text);
   assert.ok(updatedMatches.some((match) => match.path === filePath));
 });

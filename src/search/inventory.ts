@@ -1,27 +1,23 @@
 import nodePath from "node:path";
 import { AhoCorasick } from "@monyone/aho-corasick";
 import { listSearchEntries } from "./policy.js";
-import type { Candidate } from "./types.js";
+import type {
+  Candidate,
+  InventoryMatcher,
+  InventoryPattern,
+  RootPrefix,
+  SearchEntry,
+} from "../types.js";
 
-interface InventoryPattern {
-  relative: string;
-  value: string;
-}
-interface RootPrefix {
-  root: string;
-  value: string;
-}
-interface InventoryMatcher {
-  entries: readonly (readonly string[])[];
-  matcher: AhoCorasick;
-  patterns: Map<string, InventoryPattern>;
-  prefixes: readonly RootPrefix[];
-  respectIgnore: boolean;
-  roots: readonly string[];
-  searchHidden: boolean;
-}
 let inventoryMatcherCache: InventoryMatcher | undefined;
-function isBoundary(value: string | undefined, following: string | undefined): boolean {
+function isBoundary(
+  value: string | undefined,
+  following: string | undefined,
+  directoryEnd = false,
+): boolean {
+  if (directoryEnd && value !== ".") {
+    return value === undefined || /[\s"'`<>)\]},;:!?，。；：！？、]/u.test(value);
+  }
   if (value === ".") {
     return following === undefined || !/[\p{L}\p{N}_-]/u.test(following);
   }
@@ -34,25 +30,43 @@ function addMatch(
   value: string,
   start: number,
   end: number,
+  expectedKind: InventoryPattern["expectedKind"],
 ): void {
-  if (!isBoundary(text[start - 1], text[start]) || !isBoundary(text[end], text[end + 1])) {
+  if (
+    !isBoundary(text[start - 1], text[start]) ||
+    !isBoundary(text[end], text[end + 1], expectedKind === "directory")
+  ) {
     return;
   }
   const key = `${start}:${end}:${text.slice(start, end)}`;
   if (!seen.has(key)) {
     seen.add(key);
-    result.push({ end, kind: "inventory", start, value });
+    result.push({ end, expectedKind, kind: "inventory", start, value });
   }
 }
 function addVariant(
   patterns: Map<string, InventoryPattern>,
-  relative: string,
+  entry: SearchEntry,
   value: string,
 ): void {
   const key = process.platform === "win32" ? value.toLowerCase() : value;
   if (!patterns.has(key)) {
-    patterns.set(key, { relative, value });
+    patterns.set(key, {
+      expectedKind: entry.directory ? "directory" : "file",
+      relative: entry.path,
+      value,
+    });
   }
+}
+function addEntryVariants(patterns: Map<string, InventoryPattern>, entry: SearchEntry): void {
+  const native = entry.path.replaceAll("/", nodePath.sep);
+  if (entry.directory) {
+    addVariant(patterns, entry, `${entry.path}/`);
+    addVariant(patterns, entry, `${native}${nodePath.sep}`);
+    return;
+  }
+  addVariant(patterns, entry, entry.path);
+  addVariant(patterns, entry, native);
 }
 function createRootPrefixes(roots: readonly string[]): RootPrefix[] {
   const prefixes = new Map<string, RootPrefix>();
@@ -80,7 +94,15 @@ function addAbsoluteMatch(
   for (const prefix of prefixes) {
     const start = relativeStart - prefix.value.length;
     if (start >= 0 && source.startsWith(prefix.value, start)) {
-      addMatch(result, seen, text, nodePath.resolve(prefix.root, pattern.relative), start, end);
+      addMatch(
+        result,
+        seen,
+        text,
+        nodePath.resolve(prefix.root, pattern.relative),
+        start,
+        end,
+        pattern.expectedKind,
+      );
       return true;
     }
   }
@@ -88,7 +110,7 @@ function addAbsoluteMatch(
 }
 function hasSameEntries(
   cached: InventoryMatcher,
-  entries: readonly (readonly string[])[],
+  entries: readonly (readonly SearchEntry[])[],
 ): boolean {
   if (cached.entries.length !== entries.length) {
     return false;
@@ -103,7 +125,14 @@ function hasSameEntries(
       return false;
     }
     for (let entryIndex = 0; entryIndex < currentEntries.length; entryIndex += 1) {
-      if (cachedEntries[entryIndex] !== currentEntries[entryIndex]) {
+      const cachedEntry = cachedEntries[entryIndex];
+      const currentEntry = currentEntries[entryIndex];
+      if (
+        cachedEntry === undefined ||
+        currentEntry === undefined ||
+        cachedEntry.directory !== currentEntry.directory ||
+        cachedEntry.path !== currentEntry.path
+      ) {
         return false;
       }
     }
@@ -112,7 +141,7 @@ function hasSameEntries(
 }
 function canReuseMatcher(
   cached: InventoryMatcher | undefined,
-  entries: readonly (readonly string[])[],
+  entries: readonly (readonly SearchEntry[])[],
   roots: readonly string[],
   respectIgnore: boolean,
   searchHidden: boolean,
@@ -142,9 +171,8 @@ export async function inventoryCandidates(
   if (!canReuseMatcher(inventoryMatcher, entries, roots, respectIgnore, searchHidden)) {
     const patterns = new Map<string, InventoryPattern>();
     for (const relativeEntries of entries) {
-      for (const relativeEntry of relativeEntries) {
-        addVariant(patterns, relativeEntry, relativeEntry);
-        addVariant(patterns, relativeEntry, relativeEntry.replaceAll("/", nodePath.sep));
+      for (const entry of relativeEntries) {
+        addEntryVariants(patterns, entry);
       }
     }
     inventoryMatcher = {
@@ -166,7 +194,7 @@ export async function inventoryCandidates(
     if (
       !addAbsoluteMatch(result, seen, source, text, pattern, inventoryMatcher.prefixes, end, begin)
     ) {
-      addMatch(result, seen, text, pattern.value, begin, end);
+      addMatch(result, seen, text, pattern.value, begin, end, pattern.expectedKind);
     }
   }
   return result;

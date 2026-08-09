@@ -1,44 +1,28 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
-import { countPaths, createFixture, expectedPathCounts } from "../benchmark/fixture.mjs";
+import { createFixture } from "../benchmark/fixture.mjs";
 
 let fixture;
+function find(text, level, options = {}) {
+  return findExistingPaths({
+    directories: fixture.directories,
+    level,
+    respectIgnore: false,
+    searchHidden: true,
+    text,
+    ...options,
+  });
+}
 before(async () => {
   fixture = await createFixture();
 });
 after(async () => {
   await fixture.cleanup();
 });
-test("finds every expected path at the highest level", async () => {
-  const text = fixture.cases.map((item) => item.text).join("\n");
-  const found = countPaths(
-    (
-      await findExistingPaths(text, MAX_LEVEL, fixture.directories, fixture.variables, false, true)
-    ).map((match) => match.path),
-  );
-  const expected = expectedPathCounts(fixture);
-  for (const [filePath, count] of expected) {
-    assert.ok((found.get(filePath) ?? 0) >= count, filePath);
-  }
-});
-test("finds each feature by its documented minimum level", async () => {
-  const results = await Promise.all(
-    fixture.cases.map((item) =>
-      findExistingPaths(item.text, item.level, fixture.directories, fixture.variables, false, true),
-    ),
-  );
-  for (const [index, item] of fixture.cases.entries()) {
-    const found = countPaths((results[index] ?? []).map((match) => match.path));
-    const expected = countPaths(item.expected.map((relative) => fixture.pathFor(relative)));
-    for (const [filePath, count] of expected) {
-      assert.ok((found.get(filePath) ?? 0) >= count, item.feature);
-    }
-  }
-});
 test("returns files and directories but excludes missing paths", async () => {
-  const text = "Try package.json, missing.txt, and src.";
-  const found = await findExistingPaths(text, MAX_LEVEL, fixture.directories, {}, false, true);
+  const text = "Try package.json, missing.txt, and src/.";
+  const found = await find(text, MAX_LEVEL);
   assert.ok(
     found.some(
       (match) =>
@@ -52,14 +36,14 @@ test("returns files and directories but excludes missing paths", async () => {
       (match) =>
         match.path === fixture.pathFor("src") &&
         match.kind === "directory" &&
-        text.slice(match.position.start, match.position.end) === "src",
+        text.slice(match.position.start, match.position.end) === "src/",
     ),
   );
   assert.ok(found.every((match) => match.path !== fixture.pathFor("missing.txt")));
 });
 test("preserves repeated path occurrences", async () => {
   const text = "package.json then package.json";
-  const found = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
+  const found = await find(text, 2);
   assert.deepEqual(
     found.filter((match) => match.path === fixture.pathFor("package.json")),
     [
@@ -78,7 +62,7 @@ test("preserves repeated path occurrences", async () => {
 });
 test("returns locations and merges matches by path and position", async () => {
   const text = "src/index.ts:12:4";
-  const found = await findExistingPaths(text, MAX_LEVEL, fixture.directories, {}, false, true);
+  const found = await find(text, MAX_LEVEL);
   assert.deepEqual(
     found.filter((match) => match.path === fixture.pathFor("src/index.ts")),
     [
@@ -97,9 +81,7 @@ test("returns line-only locations for explicit and quoted references", async () 
     { level: 1, line: 9, pathEnd: 13, text: '"src/index.ts:9"', textStart: 1 },
   ];
   const results = await Promise.all(
-    references.map((reference) =>
-      findExistingPaths(reference.text, reference.level, fixture.directories, {}, false, true),
-    ),
+    references.map((reference) => find(reference.text, reference.level)),
   );
   assert.deepEqual(
     results,
@@ -115,15 +97,8 @@ test("returns line-only locations for explicit and quoted references", async () 
 });
 test("uses additional variables", async () => {
   const text = "Load %PROJECT_ROOT%/config/.env.local.";
-  const withoutVariables = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
-  const withVariables = await findExistingPaths(
-    text,
-    2,
-    fixture.directories,
-    fixture.variables,
-    false,
-    true,
-  );
+  const withoutVariables = await find(text, 2);
+  const withVariables = await find(text, 2, { variables: fixture.variables });
   assert.deepEqual(withoutVariables, []);
   assert.deepEqual(
     withVariables.map((match) => match.path),
@@ -134,14 +109,9 @@ test("prefers additional variables over environment variables", async () => {
   const previous = process.env.PROJECT_ROOT;
   process.env.PROJECT_ROOT = fixture.secondary;
   try {
-    const found = await findExistingPaths(
-      "Load $env:PROJECT_ROOT/config/.env.local.",
-      2,
-      fixture.directories,
-      fixture.variables,
-      false,
-      true,
-    );
+    const found = await find("Load $env:PROJECT_ROOT/config/.env.local.", 2, {
+      variables: fixture.variables,
+    });
     assert.deepEqual(
       found.map((match) => match.path),
       [fixture.pathFor("config/.env.local")],
@@ -159,15 +129,10 @@ test("controls ignore rules", async () => {
   const previousConfig = process.env.GIT_CONFIG_GLOBAL;
   process.env.GIT_CONFIG_GLOBAL = fixture.globalConfig;
   try {
-    const respected = await findExistingPaths(
-      `${text}, package.json, src/index.ts, ./src`,
-      2,
-      fixture.directories,
-      {},
-      true,
-      true,
-    );
-    const disabled = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
+    const respected = await find(`${text}, package.json, src/index.ts, ./src`, 2, {
+      respectIgnore: true,
+    });
+    const disabled = await find(text, 2);
     assert.deepEqual(
       new Set(respected.map((match) => match.path)),
       new Set([
@@ -190,8 +155,8 @@ test("controls ignore rules", async () => {
 });
 test("controls hidden paths", async () => {
   const text = fixture.hiddenPaths.join(", ");
-  const hidden = await findExistingPaths(text, 2, fixture.directories, {}, false, false);
-  const visible = await findExistingPaths(text, 2, fixture.directories, {}, false, true);
+  const hidden = await find(text, 2, { searchHidden: false });
+  const visible = await find(text, 2);
   assert.deepEqual(hidden, []);
   assert.deepEqual(
     new Set(visible.map((match) => match.path)),

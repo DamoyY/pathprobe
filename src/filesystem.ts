@@ -1,13 +1,21 @@
 import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
-import { filterSearchablePaths } from "./policy.js";
-import { expandVariables } from "./variables/index.js";
+import { filterSearchablePaths } from "./search/policy.js";
+import { expandVariables } from "./variables.js";
 import { resolveUncPath } from "./native/unc.js";
 import { settings } from "../config/settings.js";
-import type { Candidate, PathLocation, PathMatch, PathPosition, Variables } from "./types.js";
+import type {
+  Candidate,
+  PathKind,
+  PathLocation,
+  PathMatch,
+  PathPosition,
+  Variables,
+} from "./types.js";
 
 interface ResolvedCandidate {
+  expectedKind?: PathKind;
   location?: PathLocation;
   path: string;
   position: PathPosition;
@@ -152,6 +160,7 @@ export async function validateCandidates(
     const paths = toPaths(prepared.value, roots, variables);
     for (const filePath of paths) {
       resolvedCandidates.push({
+        ...(candidate.expectedKind === undefined ? {} : { expectedKind: candidate.expectedKind }),
         ...(prepared.location === undefined ? {} : { location: prepared.location }),
         path: filePath,
         position: prepared.position,
@@ -170,9 +179,9 @@ export async function validateCandidates(
     [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
   );
   const matches = new Map<string, PathMatch>();
-  for (const { location, path, position } of resolvedCandidates) {
+  for (const { expectedKind, location, path, position } of resolvedCandidates) {
     const kind = kindsByPath.get(pathKey(path));
-    if (kind === undefined) {
+    if (kind === undefined || (expectedKind !== undefined && kind !== expectedKind)) {
       continue;
     }
     const key = `${pathKey(path)}\0${position.start}\0${position.end}`;

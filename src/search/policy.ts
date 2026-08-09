@@ -2,8 +2,9 @@ import { stat } from "node:fs/promises";
 import nodePath from "node:path";
 import fastGlob from "fast-glob";
 import { convertPathToPattern, globby } from "globby";
-import { settings } from "../config/settings.js";
-import { resolveUncPath } from "./native/unc.js";
+import { settings } from "../../config/settings.js";
+import { resolveUncPath } from "../native/unc.js";
+import type { SearchEntry } from "../types.js";
 
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
@@ -71,11 +72,17 @@ export async function listSearchEntries(
   root: string,
   respectIgnore: boolean,
   searchHidden: boolean,
-): Promise<string[]> {
-  if (!respectIgnore) {
-    return fastGlob("**/*", traversalOptions(root, searchHidden));
-  }
-  return globby("**/*", globbyOptions(root, respectIgnore, searchHidden));
+): Promise<SearchEntry[]> {
+  const entries = !respectIgnore
+    ? await fastGlob("**/*", { ...traversalOptions(root, searchHidden), objectMode: true })
+    : await globby("**/*", {
+        ...globbyOptions(root, respectIgnore, searchHidden),
+        objectMode: true,
+      });
+  return entries.map((entry) => ({
+    directory: entry.dirent.isDirectory(),
+    path: entry.path,
+  }));
 }
 export async function filterSearchablePaths(
   paths: readonly string[],
