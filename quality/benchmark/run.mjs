@@ -1,5 +1,6 @@
 import { Bench } from "tinybench";
 import { Buffer } from "node:buffer";
+import { readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
 import { benchmarkSettings } from "../../config/benchmark.mjs";
@@ -50,19 +51,29 @@ try {
     score.medianMs = Number(task.result?.latency.p50.toFixed(3));
     return score;
   });
-  console.table(
-    rows.map(({ categories, ...row }) => ({
-      ...row,
-      categories: Object.keys(categories).length,
-    })),
-  );
   const bunVersion = globalThis.Bun?.version;
   const runtime =
     bunVersion === undefined
       ? { name: "node", version: process.version }
       : { name: "bun", version: bunVersion };
-  console.log(
-    JSON.stringify(
+  const baselinePath = new URL("./baseline.json", import.meta.url);
+  const baseline = JSON.parse(await readFile(baselinePath, "utf8"));
+  if (
+    typeof baseline !== "object" ||
+    baseline === null ||
+    typeof baseline.runs !== "object" ||
+    baseline.runs === null ||
+    Array.isArray(baseline.runs)
+  ) {
+    throw new TypeError("baseline.json must contain a runs object");
+  }
+  const normalizedVersion = runtime.version.startsWith("v")
+    ? runtime.version
+    : `v${runtime.version}`;
+  const runtimeKey = `${runtime.name}-${normalizedVersion}`;
+  await writeFile(
+    baselinePath,
+    `${JSON.stringify(
       {
         fixture: {
           ...fixture.stats,
@@ -75,11 +86,14 @@ try {
           platform: process.platform,
           runtime,
         },
-        rows,
+        runs: {
+          ...baseline.runs,
+          [runtimeKey]: rows,
+        },
       },
       null,
       2,
-    ),
+    )}\n`,
   );
 } finally {
   await fixture.cleanup();

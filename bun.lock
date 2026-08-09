@@ -52,7 +52,7 @@
 
     "@koromix/koffi-win32-x64": ["@koromix/koffi-win32-x64@3.1.4", "", { "os": "win32", "cpu": "x64" }, "sha512-BPeQXc1bRd0QBOklvsP+AjoRnUzKbPNE6rfx7VNxrebhh09MKld2ibstgKWn6ejQLEcfKEoUJ+WAWIhX4AOsIg=="],
 
-    "@monyone/aho-corasick": ["@monyone/aho-corasick@1.5.4", "", {}, "sha512-NRh/kTAEOrIJ1Ydgyoy4MTSSeTsfLi4SFs9OuSpIVv6ApzapMLCxFInykz19M6xDaBC8omaSWm6BsTnP0vLYUw=="],
+    "@monyone/aho-corasick": ["@monyone/aho-corasick@1.5.5", "", {}, "sha512-XLHcPMTh6SSoa4p/mzsqhXoQ9hfRRjlq7jle92AQWD34YcIS2mHpLw9m5k9YTym4ZVQk5BVsROR90fsWLUQieA=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 

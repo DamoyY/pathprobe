@@ -105,6 +105,21 @@ test("uses additional variables", async () => {
     [fixture.pathFor("config/.env.local")],
   );
 });
+test("keeps the longest nested path at each occurrence", async () => {
+  const reference = "${PROJECT_ROOT}/config/.env.local";
+  const text = `${reference} then ${reference}`;
+  const found = await find(text, 2, { variables: fixture.variables });
+  assert.deepEqual(
+    found.map((match) => ({
+      path: match.path,
+      text: text.slice(match.position.start, match.position.end),
+    })),
+    [
+      { path: fixture.pathFor("config/.env.local"), text: reference },
+      { path: fixture.pathFor("config/.env.local"), text: reference },
+    ],
+  );
+});
 test("prefers additional variables over environment variables", async () => {
   const previous = process.env.PROJECT_ROOT;
   process.env.PROJECT_ROOT = fixture.secondary;

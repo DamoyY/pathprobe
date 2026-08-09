@@ -1,10 +1,11 @@
 import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
-import { filterSearchablePaths } from "./search/policy.js";
-import { expandVariables } from "./variables.js";
-import { resolveUncPath } from "./native/unc.js";
-import { settings } from "../config/settings.js";
+import { removeContainedMatches } from "./containment.js";
+import { filterSearchablePaths } from "../search/policy.js";
+import { expandVariables } from "../variables.js";
+import { resolveUncPath } from "../native/unc.js";
+import { settings } from "../../config/settings.js";
 import type {
   Candidate,
   PathKind,
@@ -12,7 +13,7 @@ import type {
   PathMatch,
   PathPosition,
   Variables,
-} from "./types.js";
+} from "../types.js";
 
 interface ResolvedCandidate {
   expectedKind?: PathKind;
@@ -20,11 +21,7 @@ interface ResolvedCandidate {
   path: string;
   position: PathPosition;
 }
-interface PreparedCandidate {
-  location?: PathLocation;
-  position: PathPosition;
-  value: string;
-}
+type PreparedCandidate = Pick<ResolvedCandidate, "location" | "position"> & { value: string };
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -197,5 +194,5 @@ export async function validateCandidates(
       position,
     });
   }
-  return [...matches.values()];
+  return removeContainedMatches([...matches.values()]);
 }

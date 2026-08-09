@@ -1,8 +1,8 @@
 import { readdir, stat } from "node:fs/promises";
 import nodePath from "node:path";
 import pLimit from "p-limit";
-import { settings } from "../config/settings.js";
-import type { PathKind } from "./types.js";
+import { settings } from "../../config/settings.js";
+import type { PathKind } from "../types.js";
 
 const knownFileErrors = new Set([
   "EACCES",
