@@ -1,6 +1,6 @@
 {
   "name": "pathprobe",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Extract, resolve, and validate file and directory paths mentioned in text, with variable expansion, ignore rules, hidden-file control, and configurable search roots.",
   "license": "Apache-2.0",
   "repository": {
@@ -15,10 +15,13 @@
     ".": {
       "types": "./dist/types/src/index.d.ts",
       "import": "./dist/index.mjs"
+    },
+    "./native-loader": {
+      "require": "./dist/native-loader.cjs"
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --clean --no-dts --format esm --platform node --sourcemap --tsconfig tsconfig.json && tsc --project config/tsconfig.build.json",
+    "build": "tsdown --config config/tsdown.config.ts && tsc --project config/tsconfig.build.json",
     "format": "oxfmt --config config/oxfmt.json .",
     "lint": "oxlint --config config/oxlint.json --tsconfig tsconfig.json .",
     "prepack": "bun run build",
@@ -41,6 +44,7 @@
     "typescript": "next"
   },
   "engines": {
-    "node": ">=20"
+    "bun": ">=1.2.6",
+    "node": ">=20.16.0"
   }
 }

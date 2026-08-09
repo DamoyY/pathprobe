@@ -1,9 +1,20 @@
-import { Buffer } from "node:buffer";
 import { isIP } from "node:net";
 import { hostname, networkInterfaces } from "node:os";
 import nodePath from "node:path";
-import koffi from "koffi";
 
+interface DriveConnection {
+  remote: unknown;
+  status: number;
+}
+interface NativeBridge {
+  getDriveConnection(drive: string, bufferChars: number): DriveConnection;
+}
+const moduleApi = globalThis.process.getBuiltinModule("node:module");
+const runtimeRequire = moduleApi.createRequire(import.meta.url);
+const native =
+  process.platform === "win32"
+    ? (runtimeRequire("pathprobe/native-loader") as NativeBridge)
+    : undefined;
 const uncServerSegmentPattern = /^[^\\/:*?"<>|]+$/u;
 const unmappedDriveErrors = new Set([1200, 1201, 1203, 1222, 2250]);
 const errorMoreData = 234;
@@ -18,15 +29,6 @@ interface DriveMapping {
   drive: string;
   remote: string;
 }
-type GetConnectionW = (localName: string, remoteName: Buffer, length: number[]) => number;
-const getConnectionW: GetConnectionW | undefined =
-  process.platform === "win32"
-    ? (koffi
-        .load("mpr.dll")
-        .func(
-          "uint32_t WNetGetConnectionW(const char16_t *lpLocalName, _Out_ char16_t *lpRemoteName, _Inout_ uint32_t *lpnLength)",
-        ) as GetConnectionW)
-    : undefined;
 function normalizeServerName(value: string): string {
   return value.replace(/\.+$/u, "").toLowerCase();
 }
@@ -103,22 +105,19 @@ function parseUncPath(value: string): UncPath | undefined {
   };
 }
 function queryDriveMapping(drive: string): string | undefined {
-  if (getConnectionW === undefined) {
+  if (native === undefined) {
     return undefined;
   }
-  const buffer = Buffer.alloc(mappingBufferChars * 2);
-  const length = [mappingBufferChars];
-  const result = getConnectionW(drive, buffer, length);
-  if (result === errorMoreData) {
+  const { remote, status } = native.getDriveConnection(drive, mappingBufferChars);
+  if (status === errorMoreData) {
     throw new Error(`WNetGetConnectionW returned an oversized mapping for ${drive}`);
   }
-  if (unmappedDriveErrors.has(result)) {
+  if (unmappedDriveErrors.has(status)) {
     return undefined;
   }
-  if (result !== 0) {
-    throw new Error(`WNetGetConnectionW failed for ${drive} with error ${result}`);
+  if (status !== 0) {
+    throw new Error(`WNetGetConnectionW failed for ${drive} with error ${status}`);
   }
-  const remote = koffi.decode(buffer, "char16_t", mappingBufferChars);
   if (typeof remote !== "string" || !remote.startsWith("\\\\")) {
     throw new TypeError(`WNetGetConnectionW returned an invalid mapping for ${drive}`);
   }

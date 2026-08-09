@@ -3,7 +3,7 @@ import nodePath from "node:path";
 import fastGlob from "fast-glob";
 import { convertPathToPattern, globby } from "globby";
 import { settings } from "../config/settings.js";
-import { resolveUncPath } from "./unc.js";
+import { resolveUncPath } from "./native/unc.js";
 
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;

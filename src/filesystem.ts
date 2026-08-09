@@ -3,7 +3,7 @@ import nodePath from "node:path";
 import { classifyExistingPaths } from "./existence.js";
 import { filterSearchablePaths } from "./policy.js";
 import { expandVariables } from "./variables/index.js";
-import { resolveUncPath } from "./unc.js";
+import { resolveUncPath } from "./native/unc.js";
 import { settings } from "../config/settings.js";
 import type { Candidate, PathLocation, PathMatch, PathPosition, Variables } from "./types.js";
 
