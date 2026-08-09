@@ -5,6 +5,7 @@
     "": {
       "name": "pathprobe",
       "dependencies": {
+        "@monyone/aho-corasick": "^1.5.4",
         "fast-glob": "latest",
         "globby": "latest",
         "koffi": "latest",
@@ -50,6 +51,8 @@
     "@koromix/koffi-win32-ia32": ["@koromix/koffi-win32-ia32@3.1.4", "", { "os": "win32", "cpu": "ia32" }, "sha512-zd7Qh8s4fzblD9zzuDf44XCbujYg3QrffhgcNJg79/YC6ABT2m0CUtX4yFic9EWm2ps8NPAM25kCTCXPpt3eaw=="],
 
     "@koromix/koffi-win32-x64": ["@koromix/koffi-win32-x64@3.1.4", "", { "os": "win32", "cpu": "x64" }, "sha512-BPeQXc1bRd0QBOklvsP+AjoRnUzKbPNE6rfx7VNxrebhh09MKld2ibstgKWn6ejQLEcfKEoUJ+WAWIhX4AOsIg=="],
+
+    "@monyone/aho-corasick": ["@monyone/aho-corasick@1.5.4", "", {}, "sha512-NRh/kTAEOrIJ1Ydgyoy4MTSSeTsfLi4SFs9OuSpIVv6ApzapMLCxFInykz19M6xDaBC8omaSWm6BsTnP0vLYUw=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 

@@ -1,6 +1,6 @@
 {
   "name": "pathprobe",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Extract, resolve, and validate file and directory paths mentioned in text, with variable expansion, ignore rules, hidden-file control, and configurable search roots.",
   "license": "Apache-2.0",
   "repository": {
@@ -27,6 +27,7 @@
     "test:benchmark:bun": "bun quality/benchmark/run.mjs"
   },
   "dependencies": {
+    "@monyone/aho-corasick": "latest",
     "fast-glob": "latest",
     "globby": "latest",
     "koffi": "latest",
