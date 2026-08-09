@@ -1,6 +1,6 @@
 {
   "name": "pathprobe",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Extract, resolve, and validate file and directory paths mentioned in text, with variable expansion, ignore rules, hidden-file control, and configurable search roots.",
   "license": "Apache-2.0",
   "repository": {
@@ -15,9 +15,6 @@
     ".": {
       "types": "./dist/types/src/index.d.ts",
       "import": "./dist/index.mjs"
-    },
-    "./native-loader": {
-      "require": "./dist/native-loader.cjs"
     }
   },
   "scripts": {

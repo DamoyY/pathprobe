@@ -1,53 +1,45 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import nodePath from "node:path";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const packageJson = JSON.parse(await readFile(new URL("../../package.json", import.meta.url)));
 const entryUrl = new URL("../../dist/index.mjs", import.meta.url);
-test("publishes the native loader as a require-only subpath", async () => {
-  assert.deepEqual(packageJson.exports["./native-loader"], {
-    require: "./dist/native-loader.cjs",
-  });
+const bridgeUrl = new URL("../../dist/native/windows-bridge.cjs", import.meta.url);
+test("publishes the native bridge as a private CJS dependency", async () => {
+  assert.equal(packageJson.exports["./native-loader"], undefined);
   assert.equal(packageJson.engines.bun, ">=1.2.6");
   assert.equal(packageJson.engines.node, ">=20.16.0");
   assert.equal(typeof packageJson.dependencies.koffi, "string");
   assert.ok(packageJson.files.includes("dist"));
-  const loaderUrl = new URL("../../dist/native-loader.cjs", import.meta.url);
-  assert.equal(
-    createRequire(import.meta.url).resolve("pathprobe/native-loader"),
-    fileURLToPath(loaderUrl),
-  );
-  const loader = await readFile(loaderUrl, "utf8");
-  assert.match(loader, /require\(["']koffi["']\)/u);
-  assert.match(loader, /module\.exports\s*=\s*\{\s*getDriveConnection\s*\}/u);
+  const bridge = await readFile(bridgeUrl, "utf8");
+  assert.match(bridge, /require\(["']koffi["']\)/u);
+  assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection\s*\}/u);
 });
-test("loads the native bridge through the runtime package subpath", async () => {
+test("exposes the native bridge to downstream bundlers as a static dependency", async () => {
   const entry = await readFile(entryUrl, "utf8");
   const packageApi = await import("pathprobe");
   assert.equal(typeof packageApi.findExistingPaths, "function");
-  assert.match(entry, /globalThis\.process\.getBuiltinModule\(["']node:module["']\)/u);
-  assert.match(entry, /runtimeRequire\(["']pathprobe\/native-loader["']\)/u);
-  assert.doesNotMatch(entry, /^\s*import\b[^\n;]*["']pathprobe\/native-loader["']/mu);
-  assert.doesNotMatch(entry, /import\(["']pathprobe\/native-loader["']\)/u);
+  assert.match(entry, /^import\s+nativeBridge\s+from\s+["']\.\/native\/windows-bridge\.cjs["'];/mu);
+  assert.doesNotMatch(entry, /pathprobe\/native-loader/u);
   assert.doesNotMatch(entry, /["']koffi["']/u);
   assert.doesNotMatch(entry, /@koromix\/koffi-/u);
 });
-test("exposes only the required native operation", { skip: process.platform !== "win32" }, () => {
-  const runtimeRequire = createRequire(import.meta.url);
-  const native = runtimeRequire("pathprobe/native-loader");
+test("exposes only the required native operation", () => {
+  const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl));
   assert.deepEqual(Object.keys(native), ["getDriveConnection"]);
   assert.equal(typeof native.getDriveConnection, "function");
 });
 test("resolves Koffi from the bridge's dependency directory", async () => {
   const temporaryRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-native-"));
-  const loaderPath = nodePath.join(temporaryRoot, "native-loader.cjs");
+  const loaderPath = nodePath.join(temporaryRoot, "windows-bridge.cjs");
   const koffiPath = nodePath.join(temporaryRoot, "node_modules", "koffi");
   await mkdir(koffiPath, { recursive: true });
-  await copyFile(new URL("../../dist/native-loader.cjs", import.meta.url), loaderPath);
+  await copyFile(bridgeUrl, loaderPath);
   await writeFile(
     nodePath.join(koffiPath, "index.js"),
     [
@@ -81,30 +73,48 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
   }
 });
 test(
-  "keeps Koffi out of a downstream Bun bundle",
-  { skip: typeof globalThis.Bun?.build !== "function" },
+  "runs after downstream Bun single-file compilation",
+  { skip: typeof globalThis.Bun?.version !== "string", timeout: 30_000 },
   async () => {
-    const result = await globalThis.Bun.build({
-      entrypoints: [fileURLToPath(entryUrl)],
-      packages: "bundle",
-      target: "node",
-      write: false,
-    });
-    assert.equal(result.success, true, result.logs.join("\n"));
-    const output = await result.outputs[0].text();
-    assert.match(output, /runtimeRequire\(["']pathprobe\/native-loader["']\)/u);
-    assert.doesNotMatch(output, /@koromix\/koffi-|import\.meta\.dirname|node_modules\/koffi/u);
-
-    const bundleRoot = await mkdtemp(
+    const downstreamRoot = await mkdtemp(
       nodePath.join(fileURLToPath(new URL("../../", import.meta.url)), ".downstream-"),
     );
-    const bundlePath = nodePath.join(bundleRoot, "bundle.mjs");
-    await writeFile(bundlePath, output);
+    const runtimeRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-compile-"));
+    const downstreamEntry = nodePath.join(downstreamRoot, "entry.mjs");
+    const executablePath = nodePath.join(
+      runtimeRoot,
+      process.platform === "win32" ? "pathprobe.exe" : "pathprobe",
+    );
     try {
-      const bundledPathprobe = await import(`${pathToFileURL(bundlePath).href}?test=${Date.now()}`);
-      assert.equal(typeof bundledPathprobe.findExistingPaths, "function");
+      const entrySpecifier = `./${nodePath
+        .relative(downstreamRoot, fileURLToPath(entryUrl))
+        .replaceAll(nodePath.sep, "/")}`;
+      await writeFile(
+        downstreamEntry,
+        [
+          `import { findExistingPaths } from ${JSON.stringify(entrySpecifier)};`,
+          `await findExistingPaths(${JSON.stringify("\\\\pathprobe.invalid\\share\\missing")}, 1, [process.cwd()]);`,
+          "",
+        ].join("\n"),
+      );
+      const compiled = spawnSync(
+        process.execPath,
+        ["build", downstreamEntry, "--compile", `--outfile=${executablePath}`],
+        { encoding: "utf8", windowsHide: true },
+      );
+      assert.equal(compiled.status, 0, `${compiled.stdout}\n${compiled.stderr}`);
+      await rm(downstreamEntry);
+      const executed = spawnSync(executablePath, [], {
+        cwd: runtimeRoot,
+        encoding: "utf8",
+        windowsHide: true,
+      });
+      assert.equal(executed.status, 0, `${executed.stdout}\n${executed.stderr}`);
     } finally {
-      await rm(bundleRoot, { recursive: true });
+      await Promise.all([
+        rm(downstreamRoot, { recursive: true }),
+        rm(runtimeRoot, { recursive: true }),
+      ]);
     }
   },
 );

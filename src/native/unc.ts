@@ -1,20 +1,9 @@
 import { isIP } from "node:net";
 import { hostname, networkInterfaces } from "node:os";
 import nodePath from "node:path";
+import nativeBridge from "./windows-bridge.cjs";
 
-interface DriveConnection {
-  remote: unknown;
-  status: number;
-}
-interface NativeBridge {
-  getDriveConnection(drive: string, bufferChars: number): DriveConnection;
-}
-const moduleApi = globalThis.process.getBuiltinModule("node:module");
-const runtimeRequire = moduleApi.createRequire(import.meta.url);
-const native =
-  process.platform === "win32"
-    ? (runtimeRequire("pathprobe/native-loader") as NativeBridge)
-    : undefined;
+const native = process.platform === "win32" ? nativeBridge : undefined;
 const uncServerSegmentPattern = /^[^\\/:*?"<>|]+$/u;
 const unmappedDriveErrors = new Set([1200, 1201, 1203, 1222, 2250]);
 const errorMoreData = 234;
