@@ -29,11 +29,7 @@ export async function createFileTree(root, files, noiseFiles, writeConcurrency) 
     [...directories].map((relative) => mkdir(nodePath.join(root, relative), { recursive: true })),
   );
   const limit = pLimit(writeConcurrency);
-  await Promise.all(
-    relativePaths.map((relative) =>
-      limit(() => writeFile(nodePath.join(root, relative), relative)),
-    ),
-  );
+  await limit.map(relativePaths, (relative) => writeFile(nodePath.join(root, relative), relative));
   return {
     directories: directories.size,
     files: relativePaths.length,
