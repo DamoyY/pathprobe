@@ -3,9 +3,9 @@ import nodePath from "node:path";
 import { applySearchPolicies } from "./eligibility.js";
 import { classifyExistingPaths } from "./existence.js";
 import { removeContainedMatches } from "./containment.js";
+import { prepareCandidate } from "./preparation.js";
 import { expandVariables } from "../variables.js";
 import { resolveUncPath } from "../native/unc.js";
-import { settings } from "../../config/settings.js";
 import type {
   Candidate,
   PathKind,
@@ -21,7 +21,6 @@ interface ResolvedCandidate {
   path: string;
   position: PathPosition;
 }
-type PreparedCandidate = Pick<ResolvedCandidate, "location" | "position"> & { value: string };
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -31,65 +30,6 @@ function uniquePaths(values: Iterable<string>): string[] {
     paths.set(pathKey(value), value);
   }
   return [...paths.values()];
-}
-function parseLocationPart(value: string, name: string): number {
-  const result = Number(value);
-  if (!Number.isSafeInteger(result)) {
-    throw new RangeError(`${name} must be a safe integer`);
-  }
-  return result;
-}
-function prepareCandidate(candidate: Candidate): PreparedCandidate {
-  let end = candidate.end;
-  let start = candidate.start;
-  let value = candidate.value;
-  if (candidate.kind !== "inventory" && candidate.kind !== "quoted") {
-    const startTrimmed = value.trimStart();
-    start += value.length - startTrimmed.length;
-    value = startTrimmed;
-    const endTrimmed = value.trimEnd();
-    end -= value.length - endTrimmed.length;
-    value = endTrimmed;
-    if (
-      value.length >= 2 &&
-      ((value[0] === '"' && value.at(-1) === '"') ||
-        (value[0] === "'" && value.at(-1) === "'") ||
-        (value[0] === "`" && value.at(-1) === "`"))
-    ) {
-      start += 1;
-      end -= 1;
-      value = value.slice(1, -1);
-    }
-    while (value.length > 0 && settings.trailingPunctuation.includes(value.at(-1) ?? "")) {
-      end -= 1;
-      value = value.slice(0, -1);
-    }
-  }
-  if (candidate.kind === "inventory") {
-    return { position: { end, start }, value };
-  }
-  const match = settings.locationSuffixPattern.exec(value);
-  if (match === null) {
-    return { position: { end, start }, value };
-  }
-  const lineValue = match.groups?.line;
-  if (lineValue === undefined) {
-    throw new TypeError("locationSuffixPattern must capture a line");
-  }
-  const columnValue = match.groups?.column;
-  const location: PathLocation =
-    columnValue === undefined
-      ? { line: parseLocationPart(lineValue, "line") }
-      : {
-          column: parseLocationPart(columnValue, "column"),
-          line: parseLocationPart(lineValue, "line"),
-        };
-  end -= match[0].length;
-  return {
-    location,
-    position: { end, start },
-    value: value.slice(0, match.index),
-  };
 }
 function unescape(value: string): string {
   if (value.startsWith("\\\\") && !value.startsWith("\\\\\\\\")) {
@@ -154,6 +94,9 @@ export async function validateCandidates(
   const validationPaths = new Map<string, string>();
   for (const candidate of candidates) {
     const prepared = prepareCandidate(candidate);
+    if (prepared === undefined) {
+      continue;
+    }
     const paths = toPaths(prepared.value, roots, variables);
     for (const filePath of paths) {
       resolvedCandidates.push({

@@ -25,7 +25,7 @@ function add(
   end: number,
   kind: Candidate["kind"],
 ): void {
-  if (value.length === 0) {
+  if (value.length === 0 || value === "/") {
     return;
   }
   const key = `${start}:${end}:${value}`;
