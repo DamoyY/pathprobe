@@ -5,6 +5,7 @@ import { convertPathToPattern, globby } from "globby";
 import { settings } from "../../config/settings.js";
 import { resolveUncPath } from "../native/unc.js";
 import type { SearchEntry } from "../types.js";
+import { createHiddenPathDetector } from "./hidden.js";
 
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
@@ -18,14 +19,11 @@ function isWithinRoot(filePath: string, root: string): boolean {
       !nodePath.isAbsolute(relative))
   );
 }
-function isHidden(relativePath: string): boolean {
-  return relativePath.split(/[\\/]/u).some((part) => part.length > 1 && part.startsWith("."));
-}
 function traversalOptions(root: string, searchHidden: boolean) {
   return {
     caseSensitiveMatch: process.platform !== "win32",
     cwd: root,
-    dot: searchHidden,
+    dot: process.platform === "win32" || searchHidden,
     followSymbolicLinks: false,
     onlyFiles: false,
     unique: true,
@@ -79,10 +77,15 @@ export async function listSearchEntries(
         ...globbyOptions(root, respectIgnore, searchHidden),
         objectMode: true,
       });
-  return entries.map((entry) => ({
-    directory: entry.dirent.isDirectory(),
-    path: entry.path,
-  }));
+  const hiddenDetector = createHiddenPathDetector();
+  return entries
+    .filter(
+      (entry) => searchHidden || !hiddenDetector.isHidden(nodePath.resolve(root, entry.path), root),
+    )
+    .map((entry) => ({
+      directory: entry.dirent.isDirectory(),
+      path: entry.path,
+    }));
 }
 export async function filterSearchablePaths(
   paths: readonly string[],
@@ -92,6 +95,7 @@ export async function filterSearchablePaths(
 ): Promise<Set<string>> {
   const allowed = new Set<string>();
   const pathsByRoot = new Map<string, string[]>();
+  const hiddenDetector = createHiddenPathDetector();
   for (const filePath of paths) {
     let hasSearchRoot = false;
     for (const root of roots) {
@@ -100,7 +104,7 @@ export async function filterSearchablePaths(
       }
       hasSearchRoot = true;
       const relative = nodePath.relative(root, filePath);
-      if (!searchHidden && isHidden(relative)) {
+      if (!searchHidden && hiddenDetector.isHidden(filePath, root)) {
         continue;
       }
       if (relative === "" || !respectIgnore) {
@@ -114,8 +118,10 @@ export async function filterSearchablePaths(
     if (hasSearchRoot) {
       continue;
     }
-    const filesystemRelative = nodePath.relative(nodePath.parse(filePath).root, filePath);
-    if (searchHidden || !isHidden(filesystemRelative)) {
+    const filesystemRoot = nodePath.parse(filePath).root;
+    const hiddenBoundary =
+      process.platform === "win32" ? nodePath.dirname(filePath) : filesystemRoot;
+    if (searchHidden || !hiddenDetector.isHidden(filePath, hiddenBoundary)) {
       allowed.add(filePath);
     }
   }

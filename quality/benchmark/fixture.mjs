@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
@@ -10,6 +11,8 @@ import { countPaths } from "./path-counts.mjs";
 import { createFileTree } from "./tree.mjs";
 
 export { countPaths };
+const dotPaths = ["config/.env.local", ".hidden/secret.txt"];
+const windowsHiddenPaths = ["hidden-attribute.txt", "hidden-directory/secret.txt"];
 const primaryFiles = [
   "package.json",
   "src/index.ts",
@@ -32,11 +35,34 @@ const primaryFiles = [
   "ignored/global.txt",
   "ignored/git-dir/item.txt",
   ".hidden/secret.txt",
+  ...(process.platform === "win32" ? windowsHiddenPaths : []),
   ...additionalFiles,
   ...workloadFiles,
   ...edgeFiles,
 ];
 const secondaryFiles = ["other/outline", "shared/config.json"];
+function setWindowsHiddenAttributes(root) {
+  if (process.platform !== "win32") {
+    return;
+  }
+  const systemRoot = process.env.SystemRoot;
+  if (systemRoot === undefined) {
+    throw new Error("SystemRoot is required to set Windows hidden attributes");
+  }
+  const executable = nodePath.join(systemRoot, "System32", "attrib.exe");
+  for (const relative of ["hidden-attribute.txt", "hidden-directory"]) {
+    const result = spawnSync(executable, ["+H", nodePath.join(root, relative)], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    if (result.error !== undefined) {
+      throw result.error;
+    }
+    if (result.status !== 0) {
+      throw new Error(`attrib.exe failed with status ${result.status}: ${result.stderr}`);
+    }
+  }
+}
 export async function createFixture(options = {}) {
   const noiseFilesPerRoot = options.noiseFilesPerRoot ?? fixtureSettings.noiseFilesPerRoot;
   const writeConcurrency = options.writeConcurrency ?? fixtureSettings.writeConcurrency;
@@ -47,6 +73,7 @@ export async function createFixture(options = {}) {
     createFileTree(primary, primaryFiles, noiseFilesPerRoot, writeConcurrency),
     createFileTree(secondary, secondaryFiles, noiseFilesPerRoot, writeConcurrency),
   ]);
+  setWindowsHiddenAttributes(primary);
   await Promise.all([
     writeFile(nodePath.join(primary, ".gitignore"), "/ignored/git.txt\n/ignored/git-dir/\n"),
     writeFile(nodePath.join(primary, ".ignore"), "/ignored/local.txt\n"),
@@ -85,7 +112,8 @@ export async function createFixture(options = {}) {
   return {
     cases,
     directories: [primary, secondary],
-    hiddenPaths: ["config/.env.local", ".hidden/secret.txt"],
+    dotPaths,
+    hiddenPaths: process.platform === "win32" ? windowsHiddenPaths : dotPaths,
     ignoredPaths: [
       "ignored/git.txt",
       "ignored/local.txt",

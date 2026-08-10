@@ -1,7 +1,7 @@
 {
   "fixture": {
-    "directories": 874,
-    "files": 20059,
+    "directories": 875,
+    "files": 20061,
     "categories": {
       "syntax": {
         "pathExpectations": 25,
@@ -129,8 +129,8 @@
           }
         },
         "level": 1,
-        "meanMs": 20.005,
-        "medianMs": 19.312
+        "meanMs": 18.971,
+        "medianMs": 18.686
       },
       {
         "falsePositives": 8,
@@ -214,8 +214,8 @@
           }
         },
         "level": 2,
-        "meanMs": 58.907,
-        "medianMs": 58.561
+        "meanMs": 57.012,
+        "medianMs": 56.573
       },
       {
         "falsePositives": 8,
@@ -299,8 +299,8 @@
           }
         },
         "level": 3,
-        "meanMs": 190.86,
-        "medianMs": 194.948
+        "meanMs": 176.277,
+        "medianMs": 176.348
       },
       {
         "falsePositives": 8,
@@ -384,8 +384,8 @@
           }
         },
         "level": 4,
-        "meanMs": 312.827,
-        "medianMs": 301.697
+        "meanMs": 252.329,
+        "medianMs": 254.76
       },
       {
         "falsePositives": 8,
@@ -469,8 +469,8 @@
           }
         },
         "level": 5,
-        "meanMs": 468.481,
-        "medianMs": 455.536
+        "meanMs": 428.624,
+        "medianMs": 428.344
       }
     ],
     "bun-v1.4.0": [
@@ -556,8 +556,8 @@
           }
         },
         "level": 1,
-        "meanMs": 10.12,
-        "medianMs": 9.355
+        "meanMs": 9.936,
+        "medianMs": 9.712
       },
       {
         "falsePositives": 8,
@@ -641,8 +641,8 @@
           }
         },
         "level": 2,
-        "meanMs": 32.742,
-        "medianMs": 32.793
+        "meanMs": 34.785,
+        "medianMs": 34.325
       },
       {
         "falsePositives": 8,
@@ -726,8 +726,8 @@
           }
         },
         "level": 3,
-        "meanMs": 139.624,
-        "medianMs": 139.074
+        "meanMs": 134.696,
+        "medianMs": 133.983
       },
       {
         "falsePositives": 8,
@@ -811,8 +811,8 @@
           }
         },
         "level": 4,
-        "meanMs": 210.126,
-        "medianMs": 208.397
+        "meanMs": 200.574,
+        "medianMs": 198.015
       },
       {
         "falsePositives": 8,
@@ -896,8 +896,8 @@
           }
         },
         "level": 5,
-        "meanMs": 434.811,
-        "medianMs": 432.536
+        "meanMs": 383.397,
+        "medianMs": 372.297
       }
     ]
   }

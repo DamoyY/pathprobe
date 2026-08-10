@@ -18,7 +18,7 @@ test("publishes the native bridge as a private CJS dependency", async () => {
   assert.ok(packageJson.files.includes("dist"));
   const bridge = await readFile(bridgeUrl, "utf8");
   assert.match(bridge, /require\(["']koffi["']\)/u);
-  assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection\s*\}/u);
+  assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection,\s*getFileAttributes\s*\}/u);
 });
 test("exposes the native bridge to downstream bundlers as a static dependency", async () => {
   const entry = await readFile(entryUrl, "utf8");
@@ -29,10 +29,11 @@ test("exposes the native bridge to downstream bundlers as a static dependency", 
   assert.doesNotMatch(entry, /["']koffi["']/u);
   assert.doesNotMatch(entry, /@koromix\/koffi-/u);
 });
-test("exposes only the required native operation", () => {
+test("exposes only the required native operations", () => {
   const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl));
-  assert.deepEqual(Object.keys(native), ["getDriveConnection"]);
+  assert.deepEqual(Object.keys(native), ["getDriveConnection", "getFileAttributes"]);
   assert.equal(typeof native.getDriveConnection, "function");
+  assert.equal(typeof native.getFileAttributes, "function");
 });
 test("resolves Koffi from the bridge's dependency directory", async () => {
   const temporaryRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-native-"));
@@ -49,11 +50,12 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
       '    return "remote";',
       "  },",
       "  load(library) {",
-      '    if (library !== "mpr.dll") throw new Error("unexpected library");',
       "    return {",
       "      func(signature) {",
-      '        if (!signature.includes("WNetGetConnectionW")) throw new Error("unexpected signature");',
-      "        return () => 0;",
+      '        if (library === "mpr.dll" && signature.includes("WNetGetConnectionW")) return () => 0;',
+      '        if (library === "kernel32.dll" && signature.includes("GetFileAttributesW")) return () => 2;',
+      '        if (library === "kernel32.dll" && signature.includes("GetLastError")) return () => 0;',
+      '        throw new Error("unexpected native function");',
       "      },",
       "    };",
       "  },",
@@ -63,10 +65,14 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
   );
   try {
     const native = createRequire(loaderPath)(loaderPath);
-    assert.deepEqual(Object.keys(native), ["getDriveConnection"]);
+    assert.deepEqual(Object.keys(native), ["getDriveConnection", "getFileAttributes"]);
     assert.deepEqual(native.getDriveConnection("Z:", 16), {
       remote: "remote",
       status: 0,
+    });
+    assert.deepEqual(native.getFileAttributes("C:\\visible.txt"), {
+      attributes: 2,
+      error: 0,
     });
   } finally {
     await rm(temporaryRoot, { recursive: true });

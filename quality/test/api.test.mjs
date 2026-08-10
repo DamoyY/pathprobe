@@ -178,3 +178,15 @@ test("controls hidden paths", async () => {
     new Set(fixture.hiddenPaths.map(fixture.pathFor)),
   );
 });
+test(
+  "treats dot-prefixed paths as visible on Windows",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const text = fixture.dotPaths.join(", ");
+    const found = await find(text, 2, { searchHidden: false });
+    assert.deepEqual(
+      new Set(found.map((match) => match.path)),
+      new Set(fixture.dotPaths.map(fixture.pathFor)),
+    );
+  },
+);
