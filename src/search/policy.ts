@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import nodePath from "node:path";
-import fastGlob from "fast-glob";
 import { convertPathToPattern, globby } from "globby";
+import isPathInside from "is-path-inside";
 import { settings } from "../../config/settings.js";
 import { resolveUncPath } from "../native/unc.js";
 import type { SearchEntry } from "../types.js";
@@ -12,13 +12,7 @@ function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
 function isWithinRoot(filePath: string, root: string): boolean {
-  const relative = nodePath.relative(root, filePath);
-  return (
-    relative === "" ||
-    (relative !== ".." &&
-      !relative.startsWith(`..${nodePath.sep}`) &&
-      !nodePath.isAbsolute(relative))
-  );
+  return filePath === root || isPathInside(filePath, root);
 }
 function traversalOptions(root: string, searchHidden: boolean) {
   return {
@@ -73,12 +67,10 @@ export async function listSearchEntries(
   respectIgnore: boolean,
   searchHidden: boolean,
 ): Promise<SearchEntry[]> {
-  const entries = !respectIgnore
-    ? await fastGlob("**/*", { ...traversalOptions(root, searchHidden), objectMode: true })
-    : await globby("**/*", {
-        ...globbyOptions(root, respectIgnore, searchHidden),
-        objectMode: true,
-      });
+  const entries = await globby("**/*", {
+    ...globbyOptions(root, respectIgnore, searchHidden),
+    objectMode: true,
+  });
   const hiddenDetector = createHiddenPathDetector();
   return entries
     .filter(

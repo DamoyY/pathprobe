@@ -55,7 +55,7 @@ export async function classifyExistingPaths(
   const found = new Map<string, PathKind>();
   const limit = pLimit(settings.validationConcurrency);
   if (paths.length < settings.batchValidationThreshold) {
-    await Promise.all(paths.map((filePath) => limit(() => classifyAndAdd(found, filePath))));
+    await limit.map(paths, (filePath) => classifyAndAdd(found, filePath));
     return found;
   }
   const rootKeys = new Set(roots.map(pathKey));
@@ -81,37 +81,32 @@ export async function classifyExistingPaths(
     }
   }
   await Promise.all([
-    ...directPaths.map((filePath) => limit(() => classifyAndAdd(found, filePath))),
-    ...scannedGroups.map(({ parent, paths: groupPaths }) =>
-      limit(async () => {
-        let entries;
-        try {
-          entries = await readdir(parent, { withFileTypes: true });
-        } catch (error) {
-          if (isUnavailablePathError(error, parent)) {
-            return;
-          }
-          throw error;
+    limit.map(directPaths, (filePath) => classifyAndAdd(found, filePath)),
+    limit.map(scannedGroups, async ({ parent, paths: groupPaths }) => {
+      let entries;
+      try {
+        entries = await readdir(parent, { withFileTypes: true });
+      } catch (error) {
+        if (isUnavailablePathError(error, parent)) {
+          return;
         }
-        const entriesByName = new Map(entries.map((entry) => [pathKey(entry.name), entry]));
-        await Promise.all(
-          groupPaths.map(async (filePath) => {
-            const name = nodePath.basename(filePath);
-            const entry = entriesByName.get(pathKey(name));
-            if (entry?.isFile()) {
-              found.set(filePath, "file");
-            } else if (entry?.isDirectory()) {
-              found.set(filePath, "directory");
-            } else if (
-              entry !== undefined ||
-              (process.platform === "win32" && name.includes(":"))
-            ) {
-              await classifyAndAdd(found, filePath);
-            }
-          }),
-        );
-      }),
-    ),
+        throw error;
+      }
+      const entriesByName = new Map(entries.map((entry) => [pathKey(entry.name), entry]));
+      await Promise.all(
+        groupPaths.map(async (filePath) => {
+          const name = nodePath.basename(filePath);
+          const entry = entriesByName.get(pathKey(name));
+          if (entry?.isFile()) {
+            found.set(filePath, "file");
+          } else if (entry?.isDirectory()) {
+            found.set(filePath, "directory");
+          } else if (entry !== undefined || (process.platform === "win32" && name.includes(":"))) {
+            await classifyAndAdd(found, filePath);
+          }
+        }),
+      );
+    }),
   ]);
   return found;
 }

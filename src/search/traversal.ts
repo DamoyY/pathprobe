@@ -1,9 +1,9 @@
 import nodeFileSystem from "node:fs";
 import nodePath from "node:path";
-import fastGlob from "fast-glob";
+import type { Options as GlobbyOptions } from "globby";
 import { createHiddenPathDetector } from "./hidden.js";
 
-type ReadDirectory = fastGlob.FileSystemAdapter["readdir"];
+type ReadDirectory = NonNullable<NonNullable<GlobbyOptions["fs"]>["readdir"]>;
 const unreadableDirectoryErrors = new Set(["EACCES", "ENOTDIR", "ENOENT", "EPERM"]);
 interface DirectoryEntry {
   isBlockDevice(): boolean;

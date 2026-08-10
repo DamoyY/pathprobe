@@ -129,8 +129,8 @@
           }
         },
         "level": 1,
-        "meanMs": 19.062,
-        "medianMs": 18.908
+        "meanMs": 20.498,
+        "medianMs": 19.789
       },
       {
         "falsePositives": 8,
@@ -214,8 +214,8 @@
           }
         },
         "level": 2,
-        "meanMs": 57.875,
-        "medianMs": 57.427
+        "meanMs": 57.155,
+        "medianMs": 55.552
       },
       {
         "falsePositives": 8,
@@ -299,8 +299,8 @@
           }
         },
         "level": 3,
-        "meanMs": 176.275,
-        "medianMs": 176.062
+        "meanMs": 167.574,
+        "medianMs": 167.4
       },
       {
         "falsePositives": 8,
@@ -384,8 +384,8 @@
           }
         },
         "level": 4,
-        "meanMs": 252.19,
-        "medianMs": 247.467
+        "meanMs": 235.322,
+        "medianMs": 234.811
       },
       {
         "falsePositives": 8,
@@ -469,8 +469,8 @@
           }
         },
         "level": 5,
-        "meanMs": 432.308,
-        "medianMs": 439.53
+        "meanMs": 459.468,
+        "medianMs": 464.978
       }
     ],
     "bun-v1.4.0": [
