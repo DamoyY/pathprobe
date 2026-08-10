@@ -1,5 +1,5 @@
 import { extractCandidates } from "./candidates.js";
-import { validateCandidates } from "./validation/filesystem.js";
+import { validateCandidates } from "./validation/resolution.js";
 import { inventoryCandidates } from "./search/inventory.js";
 import { resolveSearchDirectories } from "./search/policy.js";
 import { settings } from "../config/settings.js";

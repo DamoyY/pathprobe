@@ -4,7 +4,7 @@ import pLimit from "p-limit";
 import { settings } from "../../config/settings.js";
 import type { PathKind } from "../types.js";
 
-const knownFileErrors = new Set([
+const unavailablePathErrors = new Set([
   "EACCES",
   "ELOOP",
   "ENAMETOOLONG",
@@ -17,17 +17,14 @@ const unverifiableUncErrors = new Set(["UNKNOWN", "EUNKNOWN"]);
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
-function fileErrorCode(error: unknown): string | undefined {
-  if (error instanceof Error && "code" in error && typeof error.code === "string") {
-    return error.code;
-  }
-  return undefined;
-}
-function isKnownFileError(error: unknown, filePath?: string): boolean {
-  const code = fileErrorCode(error);
+function isUnavailablePathError(error: unknown, filePath?: string): boolean {
+  const code =
+    error instanceof Error && "code" in error && typeof error.code === "string"
+      ? error.code
+      : undefined;
   return (
     code !== undefined &&
-    (knownFileErrors.has(code) ||
+    (unavailablePathErrors.has(code) ||
       (filePath?.startsWith("\\\\") === true && unverifiableUncErrors.has(code)))
   );
 }
@@ -39,7 +36,7 @@ async function classifyPath(filePath: string): Promise<PathKind | undefined> {
     }
     return pathStats.isDirectory() ? "directory" : undefined;
   } catch (error) {
-    if (isKnownFileError(error, filePath)) {
+    if (isUnavailablePathError(error, filePath)) {
       return undefined;
     }
     throw error;
@@ -91,7 +88,7 @@ export async function classifyExistingPaths(
         try {
           entries = await readdir(parent, { withFileTypes: true });
         } catch (error) {
-          if (isKnownFileError(error, parent)) {
+          if (isUnavailablePathError(error, parent)) {
             return;
           }
           throw error;

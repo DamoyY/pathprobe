@@ -6,6 +6,7 @@ import { settings } from "../../config/settings.js";
 import { resolveUncPath } from "../native/unc.js";
 import type { SearchEntry } from "../types.js";
 import { createHiddenPathDetector } from "./hidden.js";
+import { createTraversalFileSystem } from "./traversal.js";
 
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
@@ -25,6 +26,7 @@ function traversalOptions(root: string, searchHidden: boolean) {
     cwd: root,
     dot: process.platform === "win32" || searchHidden,
     followSymbolicLinks: false,
+    fs: createTraversalFileSystem(root, searchHidden),
     onlyFiles: false,
     unique: true,
   } as const;
