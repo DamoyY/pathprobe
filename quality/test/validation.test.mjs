@@ -85,6 +85,42 @@ test("rejects invalid variables and boolean controls", async () => {
   await assert.rejects(find("package.json", 1, { searchHidden: 1 }), TypeError);
 });
 test(
+  "discards invalid quoted Windows candidates before applying search policies",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const drive = nodePath.parse(fixture.primary).root.slice(0, 2);
+    assert.deepEqual(await find(`"starting_directory: ${drive}"`, 1), []);
+  },
+);
+test(
+  "preserves valid Windows candidates nested within invalid spans",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const driveRoot = nodePath.parse(fixture.primary).root;
+    const prefix = "starting_directory: ";
+    const text = `${prefix}${driveRoot}`;
+    assert.deepEqual(await find(text, 3), [
+      {
+        kind: "directory",
+        path: driveRoot,
+        position: { end: text.length, start: prefix.length },
+      },
+    ]);
+  },
+);
+test(
+  "discards invalid Windows candidates during batch validation",
+  { skip: process.platform !== "win32" },
+  async () => {
+    const drive = nodePath.parse(fixture.primary).root.slice(0, 2);
+    const text = Array.from(
+      { length: 32 },
+      (_, index) => `"starting_directory_${index}: ${drive}"`,
+    ).join(" ");
+    assert.deepEqual(await find(text, 1), []);
+  },
+);
+test(
   "rejects remote UNC paths before filesystem probing",
   { skip: process.platform !== "win32", timeout: 2_000 },
   async () => {

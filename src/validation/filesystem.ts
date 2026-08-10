@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 import nodePath from "node:path";
+import { applySearchPolicies } from "./eligibility.js";
 import { classifyExistingPaths } from "./existence.js";
 import { removeContainedMatches } from "./containment.js";
-import { filterSearchablePaths } from "../search/policy.js";
 import { expandVariables } from "../variables.js";
 import { resolveUncPath } from "../native/unc.js";
 import { settings } from "../../config/settings.js";
@@ -165,13 +165,12 @@ export async function validateCandidates(
       validationPaths.set(pathKey(filePath), filePath);
     }
   }
-  let searchablePaths = [...validationPaths.values()];
-  if (respectIgnore || !searchHidden) {
-    searchablePaths = [
-      ...(await filterSearchablePaths(searchablePaths, roots, respectIgnore, searchHidden)),
-    ];
-  }
-  const classifiedPaths = await classifyExistingPaths(searchablePaths, roots);
+  const classifiedPaths = await applySearchPolicies(
+    await classifyExistingPaths([...validationPaths.values()], roots),
+    roots,
+    respectIgnore,
+    searchHidden,
+  );
   const kindsByPath = new Map(
     [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
   );
