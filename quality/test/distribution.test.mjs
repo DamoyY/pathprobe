@@ -18,6 +18,7 @@ test("publishes the native bridge as a private CJS dependency", async () => {
   assert.ok(packageJson.files.includes("dist"));
   const bridge = await readFile(bridgeUrl, "utf8");
   assert.match(bridge, /require\(["']koffi["']\)/u);
+  assert.match(bridge, /FindFirstFileW/u);
   assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection,\s*getFileAttributes\s*\}/u);
 });
 test("exposes the native bridge to downstream bundlers as a static dependency", async () => {
@@ -35,6 +36,21 @@ test("exposes only the required native operations", () => {
   assert.equal(typeof native.getDriveConnection, "function");
   assert.equal(typeof native.getFileAttributes, "function");
 });
+test(
+  "reads attributes for a locked Windows system file",
+  { skip: process.platform !== "win32" },
+  (context) => {
+    const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl));
+    const result = native.getFileAttributes("C:\\pagefile.sys");
+    if (result.attributes === 0xffffffff && [2, 3].includes(result.error)) {
+      context.skip("C:\\pagefile.sys is unavailable");
+      return;
+    }
+    assert.notEqual(result.attributes, 0xffffffff);
+    assert.equal(result.error, 0);
+    assert.ok((result.attributes & 0x2) !== 0);
+  },
+);
 test("resolves Koffi from the bridge's dependency directory", async () => {
   const temporaryRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-native-"));
   const loaderPath = nodePath.join(temporaryRoot, "windows-bridge.cjs");
@@ -45,6 +61,10 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
     nodePath.join(koffiPath, "index.js"),
     [
       "module.exports = {",
+      "  struct(definition) { return definition; },",
+      "  array(type, length, hint) { return { type, length, hint }; },",
+      "  pointer(type) { return type; },",
+      "  out(type) { return type; },",
       "  decode(buffer, type, length) {",
       '    if (type !== "char16_t" || length !== 16) throw new Error("unexpected decode");',
       '    return "remote";',
@@ -53,7 +73,8 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
       "    return {",
       "      func(signature) {",
       '        if (library === "mpr.dll" && signature.includes("WNetGetConnectionW")) return () => 0;',
-      '        if (library === "kernel32.dll" && signature.includes("GetFileAttributesW")) return () => 2;',
+      '        if (library === "kernel32.dll" && signature === "FindFirstFileW") return (path, data) => { data.fileAttributes = 2; return 2; };',
+      '        if (library === "kernel32.dll" && signature === "FindClose") return () => true;',
       '        if (library === "kernel32.dll" && signature.includes("GetLastError")) return () => 0;',
       '        throw new Error("unexpected native function");',
       "      },",

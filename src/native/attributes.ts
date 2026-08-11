@@ -10,16 +10,16 @@ export function hasWindowsHiddenAttribute(filePath: string): boolean {
   }
   const { attributes, error } = nativeBridge.getFileAttributes(nodePath.toNamespacedPath(filePath));
   if (!Number.isInteger(attributes) || !Number.isInteger(error)) {
-    throw new TypeError("GetFileAttributesW returned an invalid result");
+    throw new TypeError("Windows file attribute lookup returned an invalid result");
   }
   if (attributes !== invalidFileAttributes) {
     if (error !== 0) {
-      throw new Error(`GetFileAttributesW returned attributes with error ${error}`);
+      throw new Error(`Windows file attribute lookup returned attributes with error ${error}`);
     }
     return (attributes & fileAttributeHidden) !== 0;
   }
   if (missingPathErrors.has(error)) {
     return false;
   }
-  throw new Error(`GetFileAttributesW failed for ${filePath} with error ${error}`);
+  throw new Error(`Windows file attribute lookup failed for ${filePath} with error ${error}`);
 }
