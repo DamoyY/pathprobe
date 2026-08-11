@@ -3,7 +3,7 @@ import type { SearchSettings } from "../src/types.js";
 export const settings: SearchSettings = {
   batchValidationThreshold: 48,
   directoryScanThreshold: 2,
-  ignoreFilePatterns: ["**/.ignore", "**/.rgignore"],
+  ignoreFileNames: [".ignore", ".rgignore"],
   locationSuffixPattern: /:(?<line>\d+)(?::(?<column>\d+))?$/u,
   respectIgnoreByDefault: true,
   searchHiddenByDefault: false,

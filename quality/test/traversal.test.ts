@@ -40,7 +40,9 @@ test("treats inaccessible or vanished directories as empty subtrees", async () =
     codes.map((code) =>
       fastGlob("**/*", {
         cwd: process.cwd(),
-        fs: createTraversalFileSystem(process.cwd(), true, failingReadDirectory(code)),
+        fs: createTraversalFileSystem(process.cwd(), true, {
+          readDirectory: failingReadDirectory(code),
+        }),
         onlyFiles: false,
       }),
     ),
@@ -48,7 +50,9 @@ test("treats inaccessible or vanished directories as empty subtrees", async () =
   expect(results).toEqual(codes.map(() => []));
 });
 test("propagates unexpected directory read failures", async () => {
-  const fileSystem = createTraversalFileSystem(process.cwd(), true, failingReadDirectory("EIO"));
+  const fileSystem = createTraversalFileSystem(process.cwd(), true, {
+    readDirectory: failingReadDirectory("EIO"),
+  });
   expect(
     fastGlob("**/*", {
       cwd: process.cwd(),

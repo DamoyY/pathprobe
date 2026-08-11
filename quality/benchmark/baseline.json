@@ -129,8 +129,8 @@
           }
         },
         "level": 1,
-        "meanMs": 18.762,
-        "medianMs": 18.247
+        "meanMs": 19.091,
+        "medianMs": 19.097
       },
       {
         "falsePositives": 8,
@@ -214,8 +214,8 @@
           }
         },
         "level": 2,
-        "meanMs": 56.054,
-        "medianMs": 55.555
+        "meanMs": 56.83,
+        "medianMs": 56.748
       },
       {
         "falsePositives": 8,
@@ -299,8 +299,8 @@
           }
         },
         "level": 3,
-        "meanMs": 168.113,
-        "medianMs": 168.196
+        "meanMs": 179.404,
+        "medianMs": 184.325
       },
       {
         "falsePositives": 8,
@@ -384,8 +384,8 @@
           }
         },
         "level": 4,
-        "meanMs": 234.257,
-        "medianMs": 234.731
+        "meanMs": 245.117,
+        "medianMs": 238.778
       },
       {
         "falsePositives": 8,
@@ -469,8 +469,8 @@
           }
         },
         "level": 5,
-        "meanMs": 413.775,
-        "medianMs": 413.349
+        "meanMs": 435.488,
+        "medianMs": 427.996
       }
     ],
     "bun-v1.4.0": [
@@ -556,8 +556,8 @@
           }
         },
         "level": 1,
-        "meanMs": 10.242,
-        "medianMs": 9.649
+        "meanMs": 10.343,
+        "medianMs": 10.197
       },
       {
         "falsePositives": 8,
@@ -641,8 +641,8 @@
           }
         },
         "level": 2,
-        "meanMs": 31.361,
-        "medianMs": 30.416
+        "meanMs": 32.863,
+        "medianMs": 32.415
       },
       {
         "falsePositives": 8,
@@ -726,8 +726,8 @@
           }
         },
         "level": 3,
-        "meanMs": 143.303,
-        "medianMs": 138.249
+        "meanMs": 143.454,
+        "medianMs": 144.013
       },
       {
         "falsePositives": 8,
@@ -811,8 +811,8 @@
           }
         },
         "level": 4,
-        "meanMs": 200.335,
-        "medianMs": 199.157
+        "meanMs": 207.882,
+        "medianMs": 210.888
       },
       {
         "falsePositives": 8,
@@ -896,8 +896,8 @@
           }
         },
         "level": 5,
-        "meanMs": 389.473,
-        "medianMs": 393.537
+        "meanMs": 463.532,
+        "medianMs": 411.427
       }
     ]
   }

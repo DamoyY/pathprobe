@@ -57,7 +57,7 @@ export interface Candidate {
 export interface SearchSettings {
   batchValidationThreshold: number;
   directoryScanThreshold: number;
-  ignoreFilePatterns: string[];
+  ignoreFileNames: string[];
   locationSuffixPattern: RegExp;
   respectIgnoreByDefault: boolean;
   searchHiddenByDefault: boolean;

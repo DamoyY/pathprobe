@@ -8,30 +8,52 @@ import type { SearchEntry } from "../types.js";
 import { createHiddenPathDetector } from "./hidden.js";
 import { createTraversalFileSystem } from "./traversal.js";
 
+const ignoreFilePatterns = settings.ignoreFileNames.map(
+  (name) => `**/${convertPathToPattern(name)}`,
+);
+const ignoreFileNames = [".gitignore", ...settings.ignoreFileNames];
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
 function isWithinRoot(filePath: string, root: string): boolean {
   return filePath === root || isPathInside(filePath, root);
 }
-function traversalOptions(root: string, searchHidden: boolean) {
+function traversalOptions(
+  root: string,
+  searchHidden: boolean,
+  scopedPaths: readonly string[] | undefined,
+) {
+  const fileSystem =
+    scopedPaths === undefined
+      ? createTraversalFileSystem(root, searchHidden)
+      : createTraversalFileSystem(root, searchHidden, {
+          scope: {
+            passthroughNames: ignoreFileNames,
+            paths: scopedPaths,
+          },
+        });
   return {
     caseSensitiveMatch: process.platform !== "win32",
     cwd: root,
     dot: process.platform === "win32" || searchHidden,
     followSymbolicLinks: false,
-    fs: createTraversalFileSystem(root, searchHidden),
+    fs: fileSystem,
     onlyFiles: false,
     unique: true,
   } as const;
 }
-function globbyOptions(root: string, respectIgnore: boolean, searchHidden: boolean) {
+function globbyOptions(
+  root: string,
+  respectIgnore: boolean,
+  searchHidden: boolean,
+  scopedPaths?: readonly string[],
+) {
   return {
-    ...traversalOptions(root, searchHidden),
+    ...traversalOptions(root, searchHidden, scopedPaths),
     expandDirectories: false,
     gitignore: respectIgnore,
     globalGitignore: respectIgnore,
-    ...(respectIgnore ? { ignoreFiles: settings.ignoreFilePatterns } : {}),
+    ...(respectIgnore ? { ignoreFiles: ignoreFilePatterns } : {}),
   } as const;
 }
 export async function resolveSearchDirectories(directories: readonly string[]): Promise<string[]> {
@@ -123,7 +145,7 @@ export async function filterSearchablePaths(
     [...pathsByRoot].map(async ([root, relativePaths]) => {
       const patterns = relativePaths.map(convertPathToPattern);
       const matches = await globby(patterns, {
-        ...globbyOptions(root, true, true),
+        ...globbyOptions(root, true, true, relativePaths),
         absolute: true,
       });
       for (const match of matches) {
