@@ -56,7 +56,12 @@ const localServerNames =
   process.platform === "win32" ? collectLocalServerNames() : new Set<string>();
 let driveMappings: DriveMapping[] | undefined;
 function containsControlCharacter(value: string): boolean {
-  return [...value].some((character) => character.charCodeAt(0) < 32);
+  for (const character of value) {
+    if (character.charCodeAt(0) < 32) {
+      return true;
+    }
+  }
+  return false;
 }
 function normalizeUncRoot(value: string): string {
   return value.replaceAll("/", "\\").replace(/\\+$/u, "").toLowerCase();

@@ -8,11 +8,30 @@ import { createTraversalFileSystem } from "../../src/search/traversal.ts";
 
 type ReadDirectory = fastGlob.FileSystemAdapter["readdir"];
 function failingReadDirectory(code: string): ReadDirectory {
-  return ((_filePath, optionsOrCallback, entryCallback) => {
+  function readDirectory(
+    _filePath: string,
+    _options: { withFileTypes: true },
+    callback: (error: NodeJS.ErrnoException | null, entries: never[]) => void,
+  ): void;
+  function readDirectory(
+    _filePath: string,
+    callback: (error: NodeJS.ErrnoException | null, entries: string[]) => void,
+  ): void;
+  function readDirectory(
+    _filePath: string,
+    optionsOrCallback:
+      | { withFileTypes: true }
+      | ((error: NodeJS.ErrnoException | null, entries: string[]) => void),
+    entryCallback?: (error: NodeJS.ErrnoException | null, entries: never[]) => void,
+  ): void {
     const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : entryCallback,
       error = Object.assign(new Error(`Injected ${code}`), { code });
+    if (callback === undefined) {
+      throw new TypeError("A directory entry callback is required");
+    }
     callback(error, []);
-  }) as ReadDirectory;
+  }
+  return readDirectory;
 }
 function setHidden(filePath: string): void {
   if (process.platform !== "win32") {

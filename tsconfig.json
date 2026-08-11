@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "exactOptionalPropertyTypes": true,
     "lib": ["ESNext"],
     "module": "NodeNext",
@@ -9,7 +10,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
+    "types": ["bun", "node"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["config/**/*.ts", "quality/**/*.ts", "src/**/*.ts"]
 }

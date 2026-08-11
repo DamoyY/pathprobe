@@ -16,10 +16,7 @@ async function writeFiles(root: string, paths: readonly string[]): Promise<void>
     }),
   );
 }
-async function referenceFilter(
-  paths: readonly string[],
-  root: string,
-): Promise<ReadonlySet<string>> {
+async function referenceFilter(paths: readonly string[], root: string): Promise<Set<string>> {
   const relativePaths = paths
       .filter((filePath) => filePath !== root && isPathInside(filePath, root))
       .map((filePath) => nodePath.relative(root, filePath)),

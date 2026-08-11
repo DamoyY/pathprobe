@@ -36,15 +36,6 @@
     "scenarios": 94,
     "textBytes": 61455
   },
-  "system": {
-    "architecture": "x64",
-    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
-    "platform": "win32",
-    "runtime": {
-      "name": "bun",
-      "version": "1.4.0"
-    }
-  },
   "runs": {
     "node-v25.8.1": [
       {
@@ -129,8 +120,8 @@
           }
         },
         "level": 1,
-        "meanMs": 19.091,
-        "medianMs": 19.097
+        "meanMs": 19.327,
+        "medianMs": 19.218
       },
       {
         "falsePositives": 8,
@@ -214,8 +205,8 @@
           }
         },
         "level": 2,
-        "meanMs": 56.83,
-        "medianMs": 56.748
+        "meanMs": 59.395,
+        "medianMs": 57.71
       },
       {
         "falsePositives": 8,
@@ -299,8 +290,8 @@
           }
         },
         "level": 3,
-        "meanMs": 179.404,
-        "medianMs": 184.325
+        "meanMs": 206.318,
+        "medianMs": 201.611
       },
       {
         "falsePositives": 8,
@@ -384,8 +375,8 @@
           }
         },
         "level": 4,
-        "meanMs": 245.117,
-        "medianMs": 238.778
+        "meanMs": 249.861,
+        "medianMs": 249.197
       },
       {
         "falsePositives": 8,
@@ -469,8 +460,8 @@
           }
         },
         "level": 5,
-        "meanMs": 435.488,
-        "medianMs": 427.996
+        "meanMs": 432.239,
+        "medianMs": 417.314
       }
     ],
     "bun-v1.4.0": [
@@ -556,8 +547,8 @@
           }
         },
         "level": 1,
-        "meanMs": 10.343,
-        "medianMs": 10.197
+        "meanMs": 11.526,
+        "medianMs": 10.249
       },
       {
         "falsePositives": 8,
@@ -641,8 +632,8 @@
           }
         },
         "level": 2,
-        "meanMs": 32.863,
-        "medianMs": 32.415
+        "meanMs": 35.19,
+        "medianMs": 33.476
       },
       {
         "falsePositives": 8,
@@ -726,8 +717,8 @@
           }
         },
         "level": 3,
-        "meanMs": 143.454,
-        "medianMs": 144.013
+        "meanMs": 142.37,
+        "medianMs": 139.378
       },
       {
         "falsePositives": 8,
@@ -811,8 +802,8 @@
           }
         },
         "level": 4,
-        "meanMs": 207.882,
-        "medianMs": 210.888
+        "meanMs": 208.613,
+        "medianMs": 203.23
       },
       {
         "falsePositives": 8,
@@ -896,9 +887,18 @@
           }
         },
         "level": 5,
-        "meanMs": 463.532,
-        "medianMs": 411.427
+        "meanMs": 397.791,
+        "medianMs": 402.5
       }
     ]
+  },
+  "system": {
+    "architecture": "x64",
+    "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
+    "platform": "win32",
+    "runtime": {
+      "name": "bun",
+      "version": "1.4.0"
+    }
   }
 }

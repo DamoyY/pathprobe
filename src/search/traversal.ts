@@ -97,6 +97,34 @@ function filterToScope<T extends DirectoryEntry | string>(
     return children.has(key) || scope.passthroughNames.has(key);
   });
 }
+function completeTraversalRead<T extends DirectoryEntry | string>(
+  root: string,
+  filePath: string,
+  searchHidden: boolean,
+  hiddenDetector: ReturnType<typeof createHiddenPathDetector>,
+  scope: IndexedScope | undefined,
+  error: NodeJS.ErrnoException | null,
+  entries: T[],
+  callback: (error: NodeJS.ErrnoException | null, entries: T[]) => void,
+): void {
+  const scopedEntries = error === null ? filterToScope(filePath, entries, scope) : entries;
+  if (error !== null || searchHidden) {
+    completeDirectoryRead(error, scopedEntries, callback);
+    return;
+  }
+  try {
+    const visibleEntries = scopedEntries.filter((entry) => {
+      if (typeof entry !== "string" && !entry.isDirectory()) {
+        return true;
+      }
+      const name = typeof entry === "string" ? entry : entry.name;
+      return !hiddenDetector.isHidden(nodePath.join(filePath, name), root);
+    });
+    callback(null, visibleEntries);
+  } catch (caughtError) {
+    callback(caughtError instanceof Error ? caughtError : new Error(String(caughtError)), []);
+  }
+}
 function createReadDirectory(
   root: string,
   searchHidden: boolean,
@@ -117,8 +145,16 @@ function createReadDirectory(
   ): void {
     if (typeof optionsOrCallback === "function") {
       readDirectory(filePath, (error, entries) => {
-        const scopedEntries = error === null ? filterToScope(filePath, entries, scope) : entries;
-        completeDirectoryRead(error, scopedEntries, optionsOrCallback);
+        completeTraversalRead(
+          root,
+          filePath,
+          searchHidden,
+          hiddenDetector,
+          scope,
+          error,
+          entries,
+          optionsOrCallback,
+        );
       });
       return;
     }
@@ -126,21 +162,16 @@ function createReadDirectory(
       throw new TypeError("A directory entry callback is required");
     }
     readDirectory(filePath, optionsOrCallback, (error, entries) => {
-      const scopedEntries = error === null ? filterToScope(filePath, entries, scope) : entries;
-      if (error !== null || searchHidden) {
-        completeDirectoryRead(error, scopedEntries, entryCallback);
-        return;
-      }
-      try {
-        const visibleEntries = scopedEntries.filter(
-          (entry) =>
-            !entry.isDirectory() ||
-            !hiddenDetector.isHidden(nodePath.join(filePath, entry.name), root),
-        );
-        entryCallback(null, visibleEntries);
-      } catch (error) {
-        entryCallback(error instanceof Error ? error : new Error(String(error)), []);
-      }
+      completeTraversalRead(
+        root,
+        filePath,
+        searchHidden,
+        hiddenDetector,
+        scope,
+        error,
+        entries,
+        entryCallback,
+      );
     });
   }
   return traverseReadDirectory;

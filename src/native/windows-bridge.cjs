@@ -26,16 +26,16 @@ function getFileAttributes(filePath) {
         lowDateTime: "uint32_t",
       }),
       findData = koffi.struct({
-        alternateFileName: koffi.array("char16_t", 14, "String"),
-        creationTime: fileTime,
         fileAttributes: "uint32_t",
-        fileName: koffi.array("char16_t", 260, "String"),
-        fileSizeHigh: "uint32_t",
-        fileSizeLow: "uint32_t",
+        creationTime: fileTime,
         lastAccessTime: fileTime,
         lastWriteTime: fileTime,
+        fileSizeHigh: "uint32_t",
+        fileSizeLow: "uint32_t",
         reserved0: "uint32_t",
         reserved1: "uint32_t",
+        fileName: koffi.array("char16_t", 260, "String"),
+        alternateFileName: koffi.array("char16_t", 14, "String"),
       });
     fileApi = {
       findClose: kernel32.func("FindClose", "bool", ["void *"]),
