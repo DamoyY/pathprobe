@@ -14,9 +14,9 @@ function parseLocationPart(value: string, name: string): number {
   return result;
 }
 export function prepareCandidate(candidate: Candidate): PreparedCandidate | undefined {
-  let end = candidate.end;
-  let start = candidate.start;
-  let value = candidate.value;
+  let { end } = candidate,
+    { start } = candidate,
+    { value } = candidate;
   if (candidate.kind !== "inventory" && candidate.kind !== "quoted") {
     const startTrimmed = value.trimStart();
     start += value.length - startTrimmed.length;
@@ -26,9 +26,9 @@ export function prepareCandidate(candidate: Candidate): PreparedCandidate | unde
     value = endTrimmed;
     if (
       value.length >= 2 &&
-      ((value[0] === '"' && value.at(-1) === '"') ||
-        (value[0] === "'" && value.at(-1) === "'") ||
-        (value[0] === "`" && value.at(-1) === "`"))
+      ((value.startsWith('"') && value.at(-1) === '"') ||
+        (value.startsWith("'") && value.at(-1) === "'") ||
+        (value.startsWith("`") && value.at(-1) === "`"))
     ) {
       start += 1;
       end -= 1;

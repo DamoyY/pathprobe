@@ -9,8 +9,8 @@ import { createTraversalFileSystem } from "../../src/search/traversal.ts";
 type ReadDirectory = fastGlob.FileSystemAdapter["readdir"];
 function failingReadDirectory(code: string): ReadDirectory {
   return ((_filePath, optionsOrCallback, entryCallback) => {
-    const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : entryCallback;
-    const error = Object.assign(new Error(`Injected ${code}`), { code });
+    const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : entryCallback,
+      error = Object.assign(new Error(`Injected ${code}`), { code });
     callback(error, []);
   }) as ReadDirectory;
 }
@@ -19,14 +19,14 @@ function setHidden(filePath: string): void {
     return;
   }
   const executable = nodePath.join(
-    process.env.SystemRoot ?? "C:\\Windows",
-    "System32",
-    "attrib.exe",
-  );
-  const result = spawnSync(executable, ["+H", filePath], {
-    encoding: "utf8",
-    windowsHide: true,
-  });
+      process.env.SystemRoot ?? String.raw`C:\Windows`,
+      "System32",
+      "attrib.exe",
+    ),
+    result = spawnSync(executable, ["+H", filePath], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
   if (result.error !== undefined) {
     throw result.error;
   }
@@ -35,18 +35,18 @@ function setHidden(filePath: string): void {
   }
 }
 test("treats inaccessible or vanished directories as empty subtrees", async () => {
-  const codes = ["EACCES", "ENOTDIR", "ENOENT", "EPERM"];
-  const results = await Promise.all(
-    codes.map((code) =>
-      fastGlob("**/*", {
-        cwd: process.cwd(),
-        fs: createTraversalFileSystem(process.cwd(), true, {
-          readDirectory: failingReadDirectory(code),
+  const codes = ["EACCES", "ENOTDIR", "ENOENT", "EPERM"],
+    results = await Promise.all(
+      codes.map((code) =>
+        fastGlob("**/*", {
+          cwd: process.cwd(),
+          fs: createTraversalFileSystem(process.cwd(), true, {
+            readDirectory: failingReadDirectory(code),
+          }),
+          onlyFiles: false,
         }),
-        onlyFiles: false,
-      }),
-    ),
-  );
+      ),
+    );
   expect(results).toEqual(codes.map(() => []));
 });
 test("propagates unexpected directory read failures", async () => {
@@ -62,25 +62,25 @@ test("propagates unexpected directory read failures", async () => {
   ).rejects.toMatchObject({ code: "EIO" });
 });
 test("prunes hidden directories before recursive traversal", async () => {
-  const root = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-traversal-"));
-  const hiddenName = process.platform === "win32" ? "hidden-directory" : ".hidden";
-  const hiddenDirectory = nodePath.join(root, hiddenName);
+  const root = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-traversal-")),
+    hiddenName = process.platform === "win32" ? "hidden-directory" : ".hidden",
+    hiddenDirectory = nodePath.join(root, hiddenName);
   try {
     await mkdir(hiddenDirectory);
     await writeFile(nodePath.join(hiddenDirectory, "secret.txt"), "");
     setHidden(hiddenDirectory);
     const hiddenDisabled = await fastGlob("**/*", {
-      cwd: root,
-      dot: true,
-      fs: createTraversalFileSystem(root, false),
-      onlyFiles: false,
-    });
-    const hiddenEnabled = await fastGlob("**/*", {
-      cwd: root,
-      dot: true,
-      fs: createTraversalFileSystem(root, true),
-      onlyFiles: false,
-    });
+        cwd: root,
+        dot: true,
+        fs: createTraversalFileSystem(root, false),
+        onlyFiles: false,
+      }),
+      hiddenEnabled = await fastGlob("**/*", {
+        cwd: root,
+        dot: true,
+        fs: createTraversalFileSystem(root, true),
+        onlyFiles: false,
+      });
     expect(hiddenDisabled).toEqual([]);
     expect(hiddenEnabled).toEqual([hiddenName, `${hiddenName.replaceAll("\\", "/")}/secret.txt`]);
   } finally {

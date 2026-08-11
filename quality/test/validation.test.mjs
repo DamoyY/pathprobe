@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { hostname } from "node:os";
 import nodePath from "node:path";
 import { after, before, test } from "node:test";
-import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
+import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";
 
 let fixture;
@@ -14,7 +14,7 @@ function localUncPath(filePath, server, extended = false) {
   if (!/^[A-Za-z]:\\$/u.test(root)) {
     throw new TypeError(`${filePath} is not on a Windows drive`);
   }
-  const prefix = extended ? "\\\\?\\UNC\\" : "\\\\";
+  const prefix = extended ? "\\\\?\\UNC\\" : String.raw`\\`;
   return `${prefix}${server}\\${root[0]}$\\${filePath.slice(root.length)}`;
 }
 before(async () => {
@@ -23,12 +23,12 @@ before(async () => {
 after(async () => {
   await fixture.cleanup();
 });
-test("rejects invalid input levels", async () => {
+void test("rejects invalid input levels", async () => {
   await assert.rejects(find("package.json", 0), RangeError);
   await assert.rejects(find("package.json", MAX_LEVEL + 1), RangeError);
   await assert.rejects(find("package.json", 1.5), RangeError);
 });
-test("rejects invalid search directories", async () => {
+void test("rejects invalid search directories", async () => {
   await assert.rejects(find("package.json", 1, { directories: [] }), RangeError);
   await assert.rejects(
     find("package.json", 1, {
@@ -43,7 +43,7 @@ test("rejects invalid search directories", async () => {
     TypeError,
   );
 });
-test("allows absolute paths outside the search directories", async () => {
+void test("allows absolute paths outside the search directories", async () => {
   const found = await find(`"${fixture.root}"`, 1);
   assert.deepEqual(found, [
     {
@@ -53,10 +53,10 @@ test("allows absolute paths outside the search directories", async () => {
     },
   ]);
 });
-test("allows relative paths to resolve outside the search directories", async () => {
-  const relative = nodePath.relative(fixture.primary, fixture.root);
-  const value = nodePath.join(relative, "global.ignore");
-  const found = await find(`"${value}"`, 1);
+void test("allows relative paths to resolve outside the search directories", async () => {
+  const relative = nodePath.relative(fixture.primary, fixture.root),
+    value = nodePath.join(relative, "global.ignore"),
+    found = await find(`"${value}"`, 1);
   assert.deepEqual(found, [
     {
       kind: "file",
@@ -65,7 +65,7 @@ test("allows relative paths to resolve outside the search directories", async ()
     },
   ]);
 });
-test("allows the search directories themselves", async () => {
+void test("allows the search directories themselves", async () => {
   const found = await find(`"${fixture.primary}"`, 1, {
     respectIgnore: false,
     searchHidden: true,
@@ -78,13 +78,28 @@ test("allows the search directories themselves", async () => {
     },
   ]);
 });
-test("rejects invalid variables and boolean controls", async () => {
+void test("rejects invalid variables and boolean controls", async () => {
   await assert.rejects(findExistingPaths(null), TypeError);
   await assert.rejects(find("package.json", 1, { variables: [] }), TypeError);
   await assert.rejects(find("package.json", 1, { respectIgnore: "yes" }), TypeError);
   await assert.rejects(find("package.json", 1, { searchHidden: 1 }), TypeError);
 });
-test(
+void test("discards candidates containing null bytes while preserving valid candidates", async () => {
+  const invalid = `${fixture.pathFor("missing.txt")}\0`,
+    text = `${invalid} package.json`,
+    found = await find(text, 2);
+  assert.deepEqual(found, [
+    {
+      kind: "file",
+      path: fixture.pathFor("package.json"),
+      position: {
+        end: text.length,
+        start: invalid.length + 1,
+      },
+    },
+  ]);
+});
+void test(
   "discards invalid quoted Windows candidates before applying search policies",
   { skip: process.platform !== "win32" },
   async () => {
@@ -92,13 +107,13 @@ test(
     assert.deepEqual(await find(`"starting_directory: ${drive}"`, 1), []);
   },
 );
-test(
+void test(
   "preserves valid Windows candidates nested within invalid spans",
   { skip: process.platform !== "win32" },
   async () => {
-    const driveRoot = nodePath.parse(fixture.primary).root;
-    const prefix = "starting_directory: ";
-    const text = `${prefix}${driveRoot}`;
+    const driveRoot = nodePath.parse(fixture.primary).root,
+      prefix = "starting_directory: ",
+      text = `${prefix}${driveRoot}`;
     assert.deepEqual(await find(text, 3), [
       {
         kind: "directory",
@@ -108,29 +123,29 @@ test(
     ]);
   },
 );
-test(
+void test(
   "discards invalid Windows candidates during batch validation",
   { skip: process.platform !== "win32" },
   async () => {
-    const drive = nodePath.parse(fixture.primary).root.slice(0, 2);
-    const text = Array.from(
-      { length: 32 },
-      (_, index) => `"starting_directory_${index}: ${drive}"`,
-    ).join(" ");
+    const drive = nodePath.parse(fixture.primary).root.slice(0, 2),
+      text = Array.from(
+        { length: 32 },
+        (_, index) => `"starting_directory_${index}: ${drive}"`,
+      ).join(" ");
     assert.deepEqual(await find(text, 1), []);
   },
 );
-test(
+void test(
   "rejects remote UNC paths before filesystem probing",
-  { skip: process.platform !== "win32", timeout: 2_000 },
+  { skip: process.platform !== "win32", timeout: 2000 },
   async () => {
     const remotePaths = [
       "\\\\n\\n\\",
-      "\\\\203.0.113.1\\share\\file",
-      "\\\\?\\UNC\\203.0.113.1\\share\\file",
-      "\\\\.\\pipe\\pathprobe",
-      "\\\\?\\C:\\pathprobe",
-      "\\\\localhost",
+      String.raw`\\203.0.113.1\share\file`,
+      String.raw`\\?\UNC\203.0.113.1\share\file`,
+      String.raw`\\.\pipe\pathprobe`,
+      String.raw`\\?\C:\pathprobe`,
+      String.raw`\\localhost`,
       "file://203.0.113.1/share/file",
     ];
     assert.deepEqual(
@@ -149,10 +164,10 @@ test(
     );
   },
 );
-test("accepts local UNC server aliases", { skip: process.platform !== "win32" }, async () => {
-  const target = fixture.pathFor("package.json");
-  const aliases = new Set(["localhost", "LOCALHOST.", "127.0.0.42", hostname()]);
-  const aliasValues = [...aliases].map((alias) => localUncPath(target, alias));
+void test("accepts local UNC server aliases", { skip: process.platform !== "win32" }, async () => {
+  const target = fixture.pathFor("package.json"),
+    aliases = new Set(["localhost", "LOCALHOST.", "127.0.0.42", hostname()]),
+    aliasValues = [...aliases].map((alias) => localUncPath(target, alias));
   assert.deepEqual(
     await Promise.all(
       aliasValues.map((value) => find(value, 1, { respectIgnore: false, searchHidden: true })),
@@ -174,7 +189,7 @@ test("accepts local UNC server aliases", { skip: process.platform !== "win32" },
     },
   ]);
 });
-test(
+void test(
   "normalizes UNC search directories to drive paths",
   { skip: process.platform !== "win32" },
   async () => {

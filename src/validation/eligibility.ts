@@ -14,11 +14,11 @@ export async function applySearchPolicies(
     return new Map(existingPaths);
   }
   const searchablePaths = await filterSearchablePaths(
-    [...existingPaths.keys()],
-    roots,
-    respectIgnore,
-    searchHidden,
-  );
-  const searchableKeys = new Set([...searchablePaths].map(pathKey));
+      [...existingPaths.keys()],
+      roots,
+      respectIgnore,
+      searchHidden,
+    ),
+    searchableKeys = new Set([...searchablePaths].map(pathKey));
   return new Map([...existingPaths].filter(([filePath]) => searchableKeys.has(pathKey(filePath))));
 }

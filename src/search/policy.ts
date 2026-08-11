@@ -9,9 +9,9 @@ import { createHiddenPathDetector } from "./hidden.js";
 import { createTraversalFileSystem } from "./traversal.js";
 
 const ignoreFilePatterns = settings.ignoreFileNames.map(
-  (name) => `**/${convertPathToPattern(name)}`,
-);
-const ignoreFileNames = [".gitignore", ...settings.ignoreFileNames];
+    (name) => `**/${convertPathToPattern(name)}`,
+  ),
+  ignoreFileNames = [".gitignore", ...settings.ignoreFileNames];
 function pathKey(value: string): string {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
@@ -90,10 +90,10 @@ export async function listSearchEntries(
   searchHidden: boolean,
 ): Promise<SearchEntry[]> {
   const entries = await globby("**/*", {
-    ...globbyOptions(root, respectIgnore, searchHidden),
-    objectMode: true,
-  });
-  const hiddenDetector = createHiddenPathDetector();
+      ...globbyOptions(root, respectIgnore, searchHidden),
+      objectMode: true,
+    }),
+    hiddenDetector = createHiddenPathDetector();
   return entries
     .filter(
       (entry) => searchHidden || !hiddenDetector.isHidden(nodePath.resolve(root, entry.path), root),
@@ -109,9 +109,9 @@ export async function filterSearchablePaths(
   respectIgnore: boolean,
   searchHidden: boolean,
 ): Promise<Set<string>> {
-  const allowed = new Set<string>();
-  const pathsByRoot = new Map<string, string[]>();
-  const hiddenDetector = createHiddenPathDetector();
+  const allowed = new Set<string>(),
+    pathsByRoot = new Map<string, string[]>(),
+    hiddenDetector = createHiddenPathDetector();
   for (const filePath of paths) {
     let hasSearchRoot = false;
     for (const root of roots) {
@@ -134,20 +134,19 @@ export async function filterSearchablePaths(
     if (hasSearchRoot) {
       continue;
     }
-    const filesystemRoot = nodePath.parse(filePath).root;
-    const hiddenBoundary =
-      process.platform === "win32" ? nodePath.dirname(filePath) : filesystemRoot;
+    const filesystemRoot = nodePath.parse(filePath).root,
+      hiddenBoundary = process.platform === "win32" ? nodePath.dirname(filePath) : filesystemRoot;
     if (searchHidden || !hiddenDetector.isHidden(filePath, hiddenBoundary)) {
       allowed.add(filePath);
     }
   }
   await Promise.all(
     [...pathsByRoot].map(async ([root, relativePaths]) => {
-      const patterns = relativePaths.map(convertPathToPattern);
-      const matches = await globby(patterns, {
-        ...globbyOptions(root, true, true, relativePaths),
-        absolute: true,
-      });
+      const patterns = relativePaths.map(convertPathToPattern),
+        matches = await globby(patterns, {
+          ...globbyOptions(root, true, true, relativePaths),
+          absolute: true,
+        });
       for (const match of matches) {
         allowed.add(nodePath.normalize(match));
       }

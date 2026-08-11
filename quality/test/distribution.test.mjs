@@ -7,10 +7,10 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const packageJson = JSON.parse(await readFile(new URL("../../package.json", import.meta.url)));
-const entryUrl = new URL("../../dist/index.mjs", import.meta.url);
-const bridgeUrl = new URL("../../dist/native/windows-bridge.cjs", import.meta.url);
-test("publishes the native bridge as a private CJS dependency", async () => {
+const packageJson = JSON.parse(await readFile(new URL("../../package.json", import.meta.url))),
+  entryUrl = new URL("../../dist/index.mjs", import.meta.url),
+  bridgeUrl = new URL("../../dist/native/windows-bridge.cjs", import.meta.url);
+void test("publishes the native bridge as a private CJS dependency", async () => {
   assert.equal(packageJson.exports["./native-loader"], undefined);
   assert.equal(packageJson.engines.bun, ">=1.2.6");
   assert.equal(packageJson.engines.node, ">=20.16.0");
@@ -21,40 +21,40 @@ test("publishes the native bridge as a private CJS dependency", async () => {
   assert.match(bridge, /FindFirstFileW/u);
   assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection,\s*getFileAttributes\s*\}/u);
 });
-test("exposes the native bridge to downstream bundlers as a static dependency", async () => {
-  const entry = await readFile(entryUrl, "utf8");
-  const packageApi = await import("pathprobe");
+void test("exposes the native bridge to downstream bundlers as a static dependency", async () => {
+  const entry = await readFile(entryUrl, "utf8"),
+    packageApi = await import("pathprobe");
   assert.equal(typeof packageApi.findExistingPaths, "function");
   assert.match(entry, /^import\s+nativeBridge\s+from\s+["']\.\/native\/windows-bridge\.cjs["'];/mu);
   assert.doesNotMatch(entry, /pathprobe\/native-loader/u);
   assert.doesNotMatch(entry, /["']koffi["']/u);
   assert.doesNotMatch(entry, /@koromix\/koffi-/u);
 });
-test("exposes only the required native operations", () => {
+void test("exposes only the required native operations", () => {
   const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl));
   assert.deepEqual(Object.keys(native), ["getDriveConnection", "getFileAttributes"]);
   assert.equal(typeof native.getDriveConnection, "function");
   assert.equal(typeof native.getFileAttributes, "function");
 });
-test(
+void test(
   "reads attributes for a locked Windows system file",
   { skip: process.platform !== "win32" },
   (context) => {
-    const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl));
-    const result = native.getFileAttributes("C:\\pagefile.sys");
-    if (result.attributes === 0xffffffff && [2, 3].includes(result.error)) {
-      context.skip("C:\\pagefile.sys is unavailable");
+    const native = createRequire(import.meta.url)(fileURLToPath(bridgeUrl)),
+      result = native.getFileAttributes(String.raw`C:\pagefile.sys`);
+    if (result.attributes === 0xff_ff_ff_ff && [2, 3].includes(result.error)) {
+      context.skip(String.raw`C:\pagefile.sys is unavailable`);
       return;
     }
-    assert.notEqual(result.attributes, 0xffffffff);
+    assert.notEqual(result.attributes, 0xff_ff_ff_ff);
     assert.equal(result.error, 0);
     assert.ok((result.attributes & 0x2) !== 0);
   },
 );
-test("resolves Koffi from the bridge's dependency directory", async () => {
-  const temporaryRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-native-"));
-  const loaderPath = nodePath.join(temporaryRoot, "windows-bridge.cjs");
-  const koffiPath = nodePath.join(temporaryRoot, "node_modules", "koffi");
+void test("resolves Koffi from the bridge's dependency directory", async () => {
+  const temporaryRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-native-")),
+    loaderPath = nodePath.join(temporaryRoot, "windows-bridge.cjs"),
+    koffiPath = nodePath.join(temporaryRoot, "node_modules", "koffi");
   await mkdir(koffiPath, { recursive: true });
   await copyFile(bridgeUrl, loaderPath);
   await writeFile(
@@ -91,7 +91,7 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
       remote: "remote",
       status: 0,
     });
-    assert.deepEqual(native.getFileAttributes("C:\\visible.txt"), {
+    assert.deepEqual(native.getFileAttributes(String.raw`C:\visible.txt`), {
       attributes: 2,
       error: 0,
     });
@@ -99,19 +99,19 @@ test("resolves Koffi from the bridge's dependency directory", async () => {
     await rm(temporaryRoot, { recursive: true });
   }
 });
-test(
+void test(
   "runs after downstream Bun single-file compilation",
   { skip: typeof globalThis.Bun?.version !== "string", timeout: 30_000 },
   async () => {
     const downstreamRoot = await mkdtemp(
-      nodePath.join(fileURLToPath(new URL("../../", import.meta.url)), ".downstream-"),
-    );
-    const runtimeRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-compile-"));
-    const downstreamEntry = nodePath.join(downstreamRoot, "entry.mjs");
-    const executablePath = nodePath.join(
-      runtimeRoot,
-      process.platform === "win32" ? "pathprobe.exe" : "pathprobe",
-    );
+        nodePath.join(fileURLToPath(new URL("../../", import.meta.url)), ".downstream-"),
+      ),
+      runtimeRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-compile-")),
+      downstreamEntry = nodePath.join(downstreamRoot, "entry.mjs"),
+      executablePath = nodePath.join(
+        runtimeRoot,
+        process.platform === "win32" ? "pathprobe.exe" : "pathprobe",
+      );
     try {
       const entrySpecifier = `./${nodePath
         .relative(downstreamRoot, fileURLToPath(entryUrl))
@@ -120,7 +120,7 @@ test(
         downstreamEntry,
         [
           `import { findExistingPaths } from ${JSON.stringify(entrySpecifier)};`,
-          `await findExistingPaths({ directories: [process.cwd()], level: 1, text: ${JSON.stringify("\\\\pathprobe.invalid\\share\\missing")} });`,
+          `await findExistingPaths({ directories: [process.cwd()], level: 1, text: ${JSON.stringify(String.raw`\\pathprobe.invalid\share\missing`)} });`,
           "",
         ].join("\n"),
       );

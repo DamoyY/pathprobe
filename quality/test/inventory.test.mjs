@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
-import { findExistingPaths, MAX_LEVEL } from "../../dist/index.mjs";
+import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";
 
 let fixture;
@@ -20,10 +20,10 @@ before(async () => {
 after(async () => {
   await fixture.cleanup();
 });
-test("matches a punctuated inventory path within an absolute path", async () => {
-  const filePath = fixture.pathFor("design/(approved)/spec.md");
-  const text = `Review ${filePath} before fabrication.`;
-  const found = await find(text);
+void test("matches a punctuated inventory path within an absolute path", async () => {
+  const filePath = fixture.pathFor("design/(approved)/spec.md"),
+    text = `Review ${filePath} before fabrication.`,
+    found = await find(text);
   assert.ok(
     found.some(
       (match) =>
@@ -34,10 +34,10 @@ test("matches a punctuated inventory path within an absolute path", async () => 
   );
   assert.ok(found.every((match) => match.path !== fixture.pathFor("design")));
 });
-test("preserves inventory occurrences and rejects path-like affixes", async () => {
-  const text = "preLICENSE LICENSE LICENSE-post LICENSE";
-  const filePath = fixture.pathFor("LICENSE");
-  const found = await find(text);
+void test("preserves inventory occurrences and rejects path-like affixes", async () => {
+  const text = "preLICENSE LICENSE LICENSE-post LICENSE",
+    filePath = fixture.pathFor("LICENSE"),
+    found = await find(text);
   assert.deepEqual(
     found.filter((match) => match.path === filePath).map((match) => match.position),
     [
@@ -46,9 +46,9 @@ test("preserves inventory occurrences and rejects path-like affixes", async () =
     ],
   );
 });
-test("requires a marker for directories but not files", async () => {
-  const text = "docs docs/ ./docs LICENSE";
-  const found = await find(text);
+void test("requires a marker for directories but not files", async () => {
+  const text = "docs docs/ ./docs LICENSE",
+    found = await find(text);
   assert.deepEqual(
     found
       .filter((match) => match.path === fixture.pathFor("docs"))
@@ -71,10 +71,10 @@ test("requires a marker for directories but not files", async () => {
     ),
   );
 });
-test("rebuilds the inventory matcher when directory entries change", async () => {
-  const text = "cache refresh target";
-  const filePath = fixture.pathFor(text);
-  const initialMatches = await find(text);
+void test("rebuilds the inventory matcher when directory entries change", async () => {
+  const text = "cache refresh target",
+    filePath = fixture.pathFor(text),
+    initialMatches = await find(text);
   assert.ok(initialMatches.every((match) => match.path !== filePath));
   await writeFile(filePath, "");
   const updatedMatches = await find(text);

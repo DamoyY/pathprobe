@@ -71,9 +71,9 @@ function addEntryVariants(patterns: Map<string, InventoryPattern>, entry: Search
 function createRootPrefixes(roots: readonly string[]): RootPrefix[] {
   const prefixes = new Map<string, RootPrefix>();
   for (const root of roots) {
-    const native = root.endsWith(nodePath.sep) ? root : `${root}${nodePath.sep}`;
-    const slashRoot = root.replaceAll(nodePath.sep, "/");
-    const slash = slashRoot.endsWith("/") ? slashRoot : `${slashRoot}/`;
+    const native = root.endsWith(nodePath.sep) ? root : `${root}${nodePath.sep}`,
+      slashRoot = root.replaceAll(nodePath.sep, "/"),
+      slash = slashRoot.endsWith("/") ? slashRoot : `${slashRoot}/`;
     for (const value of [native, slash]) {
       const key = process.platform === "win32" ? value.toLowerCase() : value;
       prefixes.set(key, { root, value: key });
@@ -116,8 +116,8 @@ function hasSameEntries(
     return false;
   }
   for (let index = 0; index < entries.length; index += 1) {
-    const cachedEntries = cached.entries[index];
-    const currentEntries = entries[index];
+    const cachedEntries = cached.entries[index],
+      currentEntries = entries[index];
     if (cachedEntries === undefined || currentEntries === undefined) {
       return false;
     }
@@ -125,8 +125,8 @@ function hasSameEntries(
       return false;
     }
     for (let entryIndex = 0; entryIndex < currentEntries.length; entryIndex += 1) {
-      const cachedEntry = cachedEntries[entryIndex];
-      const currentEntry = currentEntries[entryIndex];
+      const cachedEntry = cachedEntries[entryIndex],
+        currentEntry = currentEntries[entryIndex];
       if (
         cachedEntry === undefined ||
         currentEntry === undefined ||
@@ -147,8 +147,7 @@ function canReuseMatcher(
   searchHidden: boolean,
 ): cached is InventoryMatcher {
   return (
-    cached !== undefined &&
-    cached.respectIgnore === respectIgnore &&
+    cached?.respectIgnore === respectIgnore &&
     cached.searchHidden === searchHidden &&
     cached.roots.length === roots.length &&
     cached.roots.every((root, index) => root === roots[index]) &&
@@ -162,11 +161,11 @@ export async function inventoryCandidates(
   searchHidden: boolean,
 ): Promise<Candidate[]> {
   const entries = await Promise.all(
-    roots.map((root) => listSearchEntries(root, respectIgnore, searchHidden)),
-  );
-  const result: Candidate[] = [];
-  const seen = new Set<string>();
-  const source = process.platform === "win32" ? text.toLowerCase() : text;
+      roots.map((root) => listSearchEntries(root, respectIgnore, searchHidden)),
+    ),
+    result: Candidate[] = [],
+    seen = new Set<string>(),
+    source = process.platform === "win32" ? text.toLowerCase() : text;
   let inventoryMatcher = inventoryMatcherCache;
   if (!canReuseMatcher(inventoryMatcher, entries, roots, respectIgnore, searchHidden)) {
     const patterns = new Map<string, InventoryPattern>();

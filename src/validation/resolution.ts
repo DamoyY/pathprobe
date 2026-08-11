@@ -32,13 +32,16 @@ function uniquePaths(values: Iterable<string>): string[] {
   return [...paths.values()];
 }
 function unescape(value: string): string {
-  if (value.startsWith("\\\\") && !value.startsWith("\\\\\\\\")) {
+  if (value.startsWith(String.raw`\\`) && !value.startsWith(String.raw`\\\\`)) {
     return value;
   }
   return value.replace(/\\(["'`\\])/gu, "$1").replace(/\\\\/gu, "\\");
 }
 function toPaths(value: string, roots: readonly string[], variables: Variables): string[] {
   let expanded = expandVariables(value, variables);
+  if (expanded.includes("\0")) {
+    return [];
+  }
   if (expanded.startsWith("file://")) {
     try {
       expanded = fileURLToPath(expanded);
@@ -90,8 +93,8 @@ export async function validateCandidates(
   respectIgnore: boolean,
   searchHidden: boolean,
 ): Promise<PathMatch[]> {
-  const resolvedCandidates: ResolvedCandidate[] = [];
-  const validationPaths = new Map<string, string>();
+  const resolvedCandidates: ResolvedCandidate[] = [],
+    validationPaths = new Map<string, string>();
   for (const candidate of candidates) {
     const prepared = prepareCandidate(candidate);
     if (prepared === undefined) {
@@ -109,22 +112,22 @@ export async function validateCandidates(
     }
   }
   const classifiedPaths = await applySearchPolicies(
-    await classifyExistingPaths([...validationPaths.values()], roots),
-    roots,
-    respectIgnore,
-    searchHidden,
-  );
-  const kindsByPath = new Map(
-    [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
-  );
-  const matches = new Map<string, PathMatch>();
+      await classifyExistingPaths([...validationPaths.values()], roots),
+      roots,
+      respectIgnore,
+      searchHidden,
+    ),
+    kindsByPath = new Map(
+      [...classifiedPaths].map(([filePath, kind]) => [pathKey(filePath), kind]),
+    ),
+    matches = new Map<string, PathMatch>();
   for (const { expectedKind, location, path, position } of resolvedCandidates) {
     const kind = kindsByPath.get(pathKey(path));
     if (kind === undefined || (expectedKind !== undefined && kind !== expectedKind)) {
       continue;
     }
-    const key = `${pathKey(path)}\0${position.start}\0${position.end}`;
-    const existing = matches.get(key);
+    const key = `${pathKey(path)}\0${position.start}\0${position.end}`,
+      existing = matches.get(key);
     if (existing !== undefined) {
       mergeLocation(existing, location);
       continue;

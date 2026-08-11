@@ -44,8 +44,8 @@ export async function findExistingPaths(options: FindExistingPathsOptions): Prom
   if (typeof searchHidden !== "boolean") {
     throw new TypeError("searchHidden must be a boolean");
   }
-  const roots = await resolveSearchDirectories(directories);
-  const candidates = extractCandidates(text, level);
+  const roots = await resolveSearchDirectories(directories),
+    candidates = extractCandidates(text, level);
   if (level === MAX_LEVEL) {
     candidates.push(...(await inventoryCandidates(text, roots, respectIgnore, searchHidden)));
   }

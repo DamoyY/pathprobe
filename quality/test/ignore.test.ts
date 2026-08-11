@@ -21,33 +21,33 @@ async function referenceFilter(
   root: string,
 ): Promise<ReadonlySet<string>> {
   const relativePaths = paths
-    .filter((filePath) => filePath !== root && isPathInside(filePath, root))
-    .map((filePath) => nodePath.relative(root, filePath));
-  const allowed = new Set(paths.filter((filePath) => filePath === root));
-  const matches = await globby(relativePaths.map(convertPathToPattern), {
-    absolute: true,
-    caseSensitiveMatch: process.platform !== "win32",
-    cwd: root,
-    dot: true,
-    expandDirectories: false,
-    followSymbolicLinks: false,
-    fs: createTraversalFileSystem(root, true),
-    gitignore: true,
-    globalGitignore: true,
-    ignoreFiles: ["**/.ignore", "**/.rgignore"],
-    onlyFiles: false,
-    unique: true,
-  });
+      .filter((filePath) => filePath !== root && isPathInside(filePath, root))
+      .map((filePath) => nodePath.relative(root, filePath)),
+    allowed = new Set(paths.filter((filePath) => filePath === root)),
+    matches = await globby(relativePaths.map(convertPathToPattern), {
+      absolute: true,
+      caseSensitiveMatch: process.platform !== "win32",
+      cwd: root,
+      dot: true,
+      expandDirectories: false,
+      followSymbolicLinks: false,
+      fs: createTraversalFileSystem(root, true),
+      gitignore: true,
+      globalGitignore: true,
+      ignoreFiles: ["**/.ignore", "**/.rgignore"],
+      onlyFiles: false,
+      unique: true,
+    });
   for (const match of matches) {
     allowed.add(nodePath.normalize(match));
   }
   return allowed;
 }
 test("matches the unscoped ignore traversal across rule sources and negations", async () => {
-  const repository = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-ignore-"));
-  const root = nodePath.join(repository, "project");
-  const globalConfig = nodePath.join(repository, "global.gitconfig");
-  const previousGlobalConfig = process.env.GIT_CONFIG_GLOBAL;
+  const repository = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-ignore-")),
+    root = nodePath.join(repository, "project"),
+    globalConfig = nodePath.join(repository, "global.gitconfig"),
+    previousGlobalConfig = process.env.GIT_CONFIG_GLOBAL;
   try {
     await Promise.all([
       mkdir(nodePath.join(repository, ".git")),

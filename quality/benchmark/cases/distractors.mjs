@@ -80,14 +80,14 @@ export const distractorCases = [
 ];
 export function createDistractorText(paragraphs) {
   return Array.from({ length: paragraphs }, (_, index) => {
-    const shard = String(index % 97).padStart(2, "0");
-    const lines = [
-      `2026-08-08T12:${shard}:00.000Z INFO request=${index} method=GET route=/api/v${index % 4}/tenants/${shard}/events status=200`,
-      `at async handler (src/generated/shard-${shard}/worker-${index}.ts:${index + 10}:7)`,
-      `WARN no artifact at ./missing/session-${shard}/artifact-${index}.json`,
-      `npm notice @example/module-${shard}@${index % 10}.${index % 7}.${index % 5} remained remote`,
-      `Build ${20260000 + index} finished in ${index % 60}.${index % 1000}s; docs=https://example.invalid/builds/${index}.html`,
-    ];
+    const shard = String(index % 97).padStart(2, "0"),
+      lines = [
+        `2026-08-08T12:${shard}:00.000Z INFO request=${index} method=GET route=/api/v${index % 4}/tenants/${shard}/events status=200`,
+        `at async handler (src/generated/shard-${shard}/worker-${index}.ts:${index + 10}:7)`,
+        `WARN no artifact at ./missing/session-${shard}/artifact-${index}.json`,
+        `npm notice @example/module-${shard}@${index % 10}.${index % 7}.${index % 5} remained remote`,
+        `Build ${20_260_000 + index} finished in ${index % 60}.${index % 1000}s; docs=https://example.invalid/builds/${index}.html`,
+      ];
     return lines.join(index % 3 === 0 ? "\r\n" : "\n");
   }).join("\n");
 }

@@ -28,10 +28,10 @@ function finish(result) {
   };
 }
 function scoreSegment(matches, segment) {
-  const expected = countPaths(segment.expected);
-  const actual = countPaths(matches.map((match) => match.path));
-  let matched = 0;
-  let falsePositives = 0;
+  const expected = countPaths(segment.expected),
+    actual = countPaths(matches.map((match) => match.path));
+  let matched = 0,
+    falsePositives = 0;
   for (const [key, count] of actual) {
     matched += Math.min(count, expected.get(key) ?? 0);
     falsePositives += Math.max(0, count - (expected.get(key) ?? 0));
@@ -60,16 +60,16 @@ function summarize(segments) {
 }
 export function createBenchmarkDocument(cases, backgroundText, pathFor) {
   const entries = [
-    ...cases,
-    {
-      category: "background",
-      expected: [],
-      feature: "generated-operational-noise",
-      text: backgroundText,
-    },
-  ];
-  const chunks = [];
-  const segments = [];
+      ...cases,
+      {
+        category: "background",
+        expected: [],
+        feature: "generated-operational-noise",
+        text: backgroundText,
+      },
+    ],
+    chunks = [],
+    segments = [];
   let offset = 0;
   for (const [index, entry] of entries.entries()) {
     if (index > 0) {
@@ -106,8 +106,8 @@ export function scoreMatches(matches, segments) {
       matchesBySegment[index]?.push(match);
     }
   }
-  const total = createAccumulator();
-  const categories = new Map();
+  const total = createAccumulator(),
+    categories = new Map();
   for (const [index, segment] of segments.entries()) {
     const result = scoreSegment(matchesBySegment[index] ?? [], segment);
     addResult(total, result);

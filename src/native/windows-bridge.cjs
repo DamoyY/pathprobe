@@ -1,63 +1,62 @@
 const { Buffer } = require("node:buffer");
-let connectionApi;
-let fileApi;
+
+let connectionApi, fileApi;
 function getDriveConnection(drive, bufferChars) {
   if (connectionApi === undefined) {
-    const koffi = require("koffi");
-    const getConnectionW = koffi
-      .load("mpr.dll")
-      .func(
-        "uint32_t WNetGetConnectionW(const char16_t *lpLocalName, _Out_ char16_t *lpRemoteName, _Inout_ uint32_t *lpnLength)",
-      );
+    const koffi = require("koffi"),
+      getConnectionW = koffi
+        .load("mpr.dll")
+        .func(
+          "uint32_t WNetGetConnectionW(const char16_t *lpLocalName, _Out_ char16_t *lpRemoteName, _Inout_ uint32_t *lpnLength)",
+        );
     connectionApi = { getConnectionW, koffi };
   }
-  const buffer = Buffer.alloc(bufferChars * 2);
-  const length = [bufferChars];
-  const status = connectionApi.getConnectionW(drive, buffer, length);
-  const remote =
-    status === 0 ? connectionApi.koffi.decode(buffer, "char16_t", bufferChars) : undefined;
+  const buffer = Buffer.alloc(bufferChars * 2),
+    length = [bufferChars],
+    status = connectionApi.getConnectionW(drive, buffer, length),
+    remote = status === 0 ? connectionApi.koffi.decode(buffer, "char16_t", bufferChars) : undefined;
   return { remote, status };
 }
 function getFileAttributes(filePath) {
   if (fileApi === undefined) {
-    const koffi = require("koffi");
-    const kernel32 = koffi.load("kernel32.dll");
-    const fileTime = koffi.struct({
-      lowDateTime: "uint32_t",
-      highDateTime: "uint32_t",
-    });
-    const findData = koffi.struct({
-      fileAttributes: "uint32_t",
-      creationTime: fileTime,
-      lastAccessTime: fileTime,
-      lastWriteTime: fileTime,
-      fileSizeHigh: "uint32_t",
-      fileSizeLow: "uint32_t",
-      reserved0: "uint32_t",
-      reserved1: "uint32_t",
-      fileName: koffi.array("char16_t", 260, "String"),
-      alternateFileName: koffi.array("char16_t", 14, "String"),
-    });
+    const koffi = require("koffi"),
+      kernel32 = koffi.load("kernel32.dll"),
+      fileTime = koffi.struct({
+        highDateTime: "uint32_t",
+        lowDateTime: "uint32_t",
+      }),
+      findData = koffi.struct({
+        alternateFileName: koffi.array("char16_t", 14, "String"),
+        creationTime: fileTime,
+        fileAttributes: "uint32_t",
+        fileName: koffi.array("char16_t", 260, "String"),
+        fileSizeHigh: "uint32_t",
+        fileSizeLow: "uint32_t",
+        lastAccessTime: fileTime,
+        lastWriteTime: fileTime,
+        reserved0: "uint32_t",
+        reserved1: "uint32_t",
+      });
     fileApi = {
+      findClose: kernel32.func("FindClose", "bool", ["void *"]),
       findFirstFileW: kernel32.func("FindFirstFileW", "void *", [
         "const char16_t *",
         koffi.out(koffi.pointer(findData)),
       ]),
-      findClose: kernel32.func("FindClose", "bool", ["void *"]),
       getLastError: kernel32.func("uint32_t GetLastError(void)"),
     };
   }
-  const data = {};
-  const handle = fileApi.findFirstFileW(filePath, data);
+  const data = {},
+    handle = fileApi.findFirstFileW(filePath, data);
   if (
     handle === null ||
     handle === undefined ||
     handle === -1 ||
     handle === -1n ||
-    handle === 0xffffffffn ||
-    handle === 0xffffffffffffffffn
+    handle === 0xff_ff_ff_ffn ||
+    handle === 0xff_ff_ff_ff_ff_ff_ff_ffn
   ) {
-    return { attributes: 0xffffffff, error: fileApi.getLastError() };
+    return { attributes: 0xff_ff_ff_ff, error: fileApi.getLastError() };
   }
   const closed = fileApi.findClose(handle);
   if (!closed) {

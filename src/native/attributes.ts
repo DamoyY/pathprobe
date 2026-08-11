@@ -1,8 +1,8 @@
 import nodePath from "node:path";
 import nativeBridge from "./windows-bridge.cjs";
 
-const fileAttributeHidden = 0x2;
-const invalidFileAttributes = 0xffffffff;
+const fileAttributeHidden = 0x2,
+  invalidFileAttributes = 0xff_ff_ff_ff;
 const missingPathErrors = new Set([2, 3]);
 export function hasWindowsHiddenAttribute(filePath: string): boolean {
   if (process.platform !== "win32") {

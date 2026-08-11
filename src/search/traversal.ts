@@ -55,8 +55,8 @@ function indexScope(root: string, scope: TraversalScope | undefined): IndexedSco
   if (scope === undefined) {
     return undefined;
   }
-  const resolvedRoot = nodePath.resolve(root);
-  const childrenByDirectory = new Map<string, Set<string>>();
+  const resolvedRoot = nodePath.resolve(root),
+    childrenByDirectory = new Map<string, Set<string>>();
   for (const relativePath of scope.paths) {
     if (
       nodePath.isAbsolute(relativePath) ||
@@ -67,8 +67,8 @@ function indexScope(root: string, scope: TraversalScope | undefined): IndexedSco
     }
     let directory = resolvedRoot;
     for (const name of relativePath.split(nodePath.sep)) {
-      const directoryKey = pathKey(directory);
-      const children = childrenByDirectory.get(directoryKey) ?? new Set<string>();
+      const directoryKey = pathKey(directory),
+        children = childrenByDirectory.get(directoryKey) ?? new Set<string>();
       children.add(pathKey(name));
       childrenByDirectory.set(directoryKey, children);
       directory = nodePath.join(directory, name);
@@ -92,8 +92,8 @@ function filterToScope<T extends DirectoryEntry | string>(
     return [];
   }
   return entries.filter((entry) => {
-    const name = typeof entry === "string" ? entry : entry.name;
-    const key = pathKey(name);
+    const name = typeof entry === "string" ? entry : entry.name,
+      key = pathKey(name);
     return children.has(key) || scope.passthroughNames.has(key);
   });
 }
@@ -138,8 +138,8 @@ function createReadDirectory(
             !hiddenDetector.isHidden(nodePath.join(filePath, entry.name), root),
         );
         entryCallback(null, visibleEntries);
-      } catch (caught) {
-        entryCallback(caught instanceof Error ? caught : new Error(String(caught)), []);
+      } catch (error) {
+        entryCallback(error instanceof Error ? error : new Error(String(error)), []);
       }
     });
   }
