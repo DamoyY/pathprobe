@@ -41,6 +41,9 @@ void test("returns files and directories but excludes missing paths", async () =
   );
   assert.ok(found.every((match) => match.path !== fixture.pathFor("missing.txt")));
 });
+void test("does not recognize standalone dots with or without quotes", async () => {
+  assert.deepEqual(await find(`. "." '.' \`.\``, MAX_LEVEL), []);
+});
 void test("preserves repeated path occurrences", async () => {
   const text = "package.json then package.json",
     found = await find(text, 2);

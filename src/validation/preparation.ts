@@ -59,7 +59,7 @@ export function prepareCandidate(candidate: Candidate): PreparedCandidate | unde
       value = value.slice(0, match.index);
     }
   }
-  if (value === "/") {
+  if (value === "/" || value === ".") {
     return undefined;
   }
   return {
