@@ -5,7 +5,7 @@ import { resolveSearchDirectories } from "./search/policy.js";
 import { settings } from "../config/settings.js";
 import type { FindExistingPathsOptions, PathMatch, Variables } from "./types.js";
 
-export const MAX_LEVEL = settings.spanWordLimits.length + 3;
+export const MAX_LEVEL: number = settings.spanWordLimits.length + 3;
 function validateOptions(value: unknown): asserts value is FindExistingPathsOptions {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("options must be an object");

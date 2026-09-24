@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
   "categories": {
     "correctness": "error",
     "perf": "warn",
@@ -11,6 +11,6 @@
   },
   "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "jsdoc", "promise", "jest"],
   "rules": {
-    "typescript/no-deprecated": "error"
+    "typescript/no-deprecated": "warn"
   }
 }

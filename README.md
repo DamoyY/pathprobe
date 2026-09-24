@@ -1,44 +1,37 @@
+Language Option / 语言选项：
+
+**English** | [简体中文](config/locales/zh-CN/README.md)
+
+---
+
 # pathprobe
 
-`pathprobe` 用于从一段文本中找出其中提到的、真实存在于文件系统中的文件或目录路径。
+`pathprobe` finds references to existing files and directories inside natural-language text.
 
-## 安装
+It can recognize absolute and relative paths, quoted paths, variable-based paths, and less explicit path references, then verify that the referenced filesystem entries actually exist.
 
-```bash
-npm install pathprobe
-```
-
-## 基本用法
+## Usage
 
 ```ts
-import { findExistingPaths } from "pathprobe";
+import { findExistingPaths, MAX_LEVEL } from "pathprobe";
 
 const matches = await findExistingPaths({
-  text: `
-  请检查 src/index.ts:12
-  以及 "./config/settings.json"
-  `,
-  level: 2,
+  text: "Please check src/index.ts and ./config/settings.json",
   directories: [process.cwd()],
+  level: 2,
 });
 
 console.log(matches);
 ```
 
-返回结果类似：
+Example result:
 
 ```ts
 [
   {
     kind: "file",
     path: "/project/src/index.ts",
-    position: {
-      start: 8,
-      end: 20,
-    },
-    location: {
-      line: 12,
-    },
+    position: { start: 13, end: 25 },
   },
 ];
 ```
@@ -46,116 +39,107 @@ console.log(matches);
 ## API
 
 ```ts
-findExistingPaths({
-  text,
-  level,
-  directories,
-  variables?,
-  respectIgnore?,
-  searchHidden?,
-}): Promise<PathMatch[]>
+findExistingPaths(options): Promise<PathMatch[]>
 ```
 
-参数说明：
-
-- `text`：需要扫描的文本。
-- `level`：搜索强度，值越高，识别越宽松。
-- `directories`：解析相对路径时使用的搜索目录。
-- `variables`：可选的变量值。
-- `respectIgnore`：是否遵守 `.gitignore` 等忽略规则。
-- `searchHidden`：是否搜索隐藏文件和目录。
-
-`directories` 中的目录必须真实存在。
-
-## 搜索级别
-
-级别越高，能够识别更多自然文本中的路径，也可能产生更多文件系统检查。
-
-可通过：
-
-```ts
-import { MAX_LEVEL } from "pathprobe";
-```
-
-获取当前最高级别。
-
-## 路径位置
-
-路径后可以附带行号或行列号：
-
-```text
-src/index.ts:42
-src/index.ts:42:8
-```
-
-匹配结果会包含：
+Main options:
 
 ```ts
 {
-  location: {
-    line: 42,
-    column: 8,
-  }
+  text: string;
+  directories: readonly string[];
+  level: number;
+  variables?: Record<string, string>;
+  respectIgnore?: boolean;
+  searchHidden?: boolean;
 }
 ```
 
-同时，`position.start` 和 `position.end` 表示路径在原始文本中的字符范围。
+`text` is the text to inspect.
 
-## 变量展开
+`directories` contains the search roots used to resolve relative paths. At least one directory is required.
 
-可以在文本中使用常见的变量表达式：
+`level` controls how aggressively paths are detected and must be between `1` and `MAX_LEVEL`. Higher levels can recognize less explicit references but may require more filesystem searching.
 
-```text
-$HOME/project/file.txt
-${HOME}/project/file.txt
-$env:HOME/project/file.txt
-%HOME%\project\file.txt
-{{ HOME }}/project/file.txt
-${{ env.HOME }}/project/file.txt
+`variables` supplies values for references such as `$HOME/project`, `${WORKSPACE}/src`, or `%TEMP%\file.txt`.
+
+`respectIgnore` controls whether ignore rules such as `.gitignore` are respected.
+
+`searchHidden` controls whether hidden files and directories are searchable.
+
+Optional defaults are determined by the package configuration.
+
+## Search levels
+
+Lower levels are useful when the input already contains clearly formatted paths.
+
+```ts
+level: 1
 ```
 
-也可以自行提供变量：
+Handles obvious references such as `/tmp/file.txt`, `C:\work\file.ts`, `./src/index.ts`, and `"docs/My File.md"`.
+
+```ts
+level: 2
+```
+
+Also detects additional path-like tokens and variable-based paths.
+
+`level >= 3` progressively considers longer text spans, which is useful for paths containing spaces.
+
+`MAX_LEVEL` performs the broadest search and can recognize names using the actual contents of the configured search directories.
+
+When in doubt, start with level `1` or `2` and increase it only when broader matching is needed.
+
+## Line and column locations
+
+A path may include a source location:
+
+```text
+src/index.ts:20
+src/index.ts:20:8
+```
+
+The result can then contain:
+
+```ts
+location: { line: 20, column: 8 }
+```
+
+## Variables
 
 ```ts
 await findExistingPaths({
-  text: "$PROJECT_ROOT/src/index.ts",
-  level: 2,
+  text: "$ROOT/src/index.ts",
   directories: [process.cwd()],
+  level: 2,
   variables: {
-    PROJECT_ROOT: "/projects/demo",
+    ROOT: "/project",
   },
 });
 ```
 
-未显式提供的变量会尝试从 `process.env` 中读取。
+Variables not supplied explicitly may also be resolved from the current process environment.
 
-## Windows / UNC
+## Result
 
-在 Windows 上，`pathprobe` 可以处理：
-
-```text
-\\server\share\project\file.txt
-```
-
-对于映射到本机盘符的网络共享，以及本机管理共享（如 `\\localhost\C$\...`），会尽可能转换成可由本机文件系统验证的路径。
-
-无法映射为本地可访问路径的 UNC 地址会被忽略。
-
-## 返回类型
+Each `PathMatch` has the following shape:
 
 ```ts
-interface PathMatch {
+{
   kind: "file" | "directory";
   path: string;
-  position: {
-    start: number;
-    end: number;
-  };
-  location?: {
-    line: number;
-    column?: number;
-  };
+  position: { start: number; end: number };
+  location?: { line: number; column?: number };
 }
 ```
 
-`pathprobe` 只返回经过文件系统验证、当前真实存在的文件或目录。
+`position` refers to the matching range in the original input `text`.
+
+Only paths that exist and satisfy the active hidden-file and ignore policies are returned.
+
+## Platforms
+
+Common POSIX and Windows path formats are supported.
+
+On Windows, drive paths, resolvable UNC paths, and Windows hidden attributes are also supported.

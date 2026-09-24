@@ -1,4 +1,5 @@
 import nodePath from "node:path";
+import process from "node:process";
 import nativeBridge from "./windows-bridge.cjs";
 
 const fileAttributeHidden = 0x2,

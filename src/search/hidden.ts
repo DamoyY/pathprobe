@@ -1,4 +1,5 @@
 import nodePath from "node:path";
+import process from "node:process";
 import { hasWindowsHiddenAttribute } from "../native/attributes.js";
 
 function pathKey(value: string): string {

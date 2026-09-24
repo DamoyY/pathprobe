@@ -1,3 +1,4 @@
+import process from "node:process";
 import type { Variables } from "./types.js";
 
 const nameSource = String.raw`[A-Za-z_][A-Za-z0-9_.-]*`;

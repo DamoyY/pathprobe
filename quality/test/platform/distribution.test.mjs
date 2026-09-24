@@ -3,20 +3,27 @@ import { spawnSync } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import nodePath from "node:path";
+import process from "node:process";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { executionProfile } from "../../tools/host.mjs";
 
-const packageJson = JSON.parse(await readFile(new URL("../../package.json", import.meta.url))),
-  entryUrl = new URL("../../dist/index.mjs", import.meta.url),
-  bridgeUrl = new URL("../../dist/native/windows-bridge.cjs", import.meta.url);
+const packageJson = JSON.parse(await readFile(new URL("../../../package.json", import.meta.url))),
+  entryUrl = new URL("../../../dist/index.mjs", import.meta.url),
+  bridgeUrl = new URL("../../../dist/native/windows-bridge.cjs", import.meta.url),
+  profile = executionProfile();
 void test("publishes the native bridge as a private CJS dependency", async () => {
   assert.equal(packageJson.exports["./native-loader"], undefined);
-  assert.equal(packageJson.engines.bun, ">=1.2.6");
-  assert.equal(packageJson.engines.node, ">=20.16.0");
   assert.equal(typeof packageJson.dependencies.koffi, "string");
   assert.ok(packageJson.files.includes("dist"));
   const bridge = await readFile(bridgeUrl, "utf8");
+  const declarations = await readFile(
+    new URL(`../../../${packageJson.exports["."].types}`, import.meta.url),
+    "utf8",
+  );
+  assert.match(declarations, /findExistingPaths/u);
+  assert.doesNotMatch(declarations, /Bun|NodeJS|node:/u);
   assert.match(bridge, /require\(["']koffi["']\)/u);
   assert.match(bridge, /FindFirstFileW/u);
   assert.match(bridge, /module\.exports\s*=\s*\{\s*getDriveConnection,\s*getFileAttributes\s*\}/u);
@@ -100,11 +107,11 @@ void test("resolves Koffi from the bridge's dependency directory", async () => {
   }
 });
 void test(
-  "runs after downstream Bun single-file compilation",
-  { skip: typeof globalThis.Bun?.version !== "string", timeout: 30_000 },
+  "runs after downstream single-file compilation when configured",
+  { skip: profile.compile === undefined, timeout: 30_000 },
   async () => {
     const downstreamRoot = await mkdtemp(
-        nodePath.join(fileURLToPath(new URL("../../", import.meta.url)), ".downstream-"),
+        nodePath.join(fileURLToPath(new URL("../../../", import.meta.url)), ".downstream-"),
       ),
       runtimeRoot = await mkdtemp(nodePath.join(tmpdir(), "pathprobe-compile-")),
       downstreamEntry = nodePath.join(downstreamRoot, "entry.mjs"),
@@ -119,18 +126,25 @@ void test(
       await writeFile(
         downstreamEntry,
         [
+          'import assert from "node:assert/strict";',
+          'import process from "node:process";',
           `import { findExistingPaths } from ${JSON.stringify(entrySpecifier)};`,
+          "const matches = await findExistingPaths({ directories: [process.cwd()], level: 1, text: '\"visible.txt\"', respectIgnore: false, searchHidden: false });",
+          "assert.equal(matches.length, 1);",
           `await findExistingPaths({ directories: [process.cwd()], level: 1, text: ${JSON.stringify(String.raw`\\pathprobe.invalid\share\missing`)} });`,
           "",
         ].join("\n"),
       );
       const compiled = spawnSync(
         process.execPath,
-        ["build", downstreamEntry, "--compile", `--outfile=${executablePath}`],
+        profile.compile.map((part) =>
+          part.replaceAll("{entry}", downstreamEntry).replaceAll("{output}", executablePath),
+        ),
         { encoding: "utf8", windowsHide: true },
       );
       assert.equal(compiled.status, 0, `${compiled.stdout}\n${compiled.stderr}`);
       await rm(downstreamEntry);
+      await writeFile(nodePath.join(runtimeRoot, "visible.txt"), "");
       const executed = spawnSync(executablePath, [], {
         cwd: runtimeRoot,
         encoding: "utf8",

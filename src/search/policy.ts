@@ -1,4 +1,5 @@
 import { stat } from "node:fs/promises";
+import process from "node:process";
 import nodePath from "node:path";
 import { convertPathToPattern, globby } from "globby";
 import isPathInside from "is-path-inside";

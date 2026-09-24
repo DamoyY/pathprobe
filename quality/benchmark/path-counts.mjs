@@ -1,4 +1,6 @@
-export function pathKey(value) {
+import process from "node:process";
+
+function pathKey(value) {
   return process.platform === "win32" ? value.toLowerCase() : value;
 }
 export function countPaths(paths) {

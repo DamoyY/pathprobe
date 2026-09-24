@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/knip/schema.json",
+  "entry": [
+    "src/index.ts",
+    "src/native/windows-bridge.cjs",
+    "quality/benchmark/run.mjs",
+    "quality/test/**/*.test.mjs",
+    "config/tools/bundle.mjs"
+  ],
+  "project": ["src/**/*.{ts,cts,cjs}", "quality/**/*.mjs", "config/**/*.{mjs,ts}"],
+  "ignoreDependencies": ["oxfmt", "oxlint", "oxlint-tsgolint"]
+}

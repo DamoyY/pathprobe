@@ -1,0 +1,7 @@
+{
+  "invalidIdentity": "无法确定运行时名称或版本；请设置 PATHPROBE_RUNTIME 和 PATHPROBE_RUNTIME_VERSION。",
+  "unknownProfile": "运行时没有执行配置，请在 config/execution.mjs 中添加配置",
+  "invalidProfile": "运行时的执行参数配置无效",
+  "childFailure": "开发子进程执行失败",
+  "unknownTask": "未知开发任务"
+}

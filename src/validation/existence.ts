@@ -1,4 +1,5 @@
 import { readdir, stat } from "node:fs/promises";
+import process from "node:process";
 import nodePath from "node:path";
 import pLimit from "p-limit";
 import { settings } from "../../config/settings.js";

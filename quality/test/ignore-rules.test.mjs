@@ -1,13 +1,17 @@
-import { expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
+import process from "node:process";
+import { createJiti } from "jiti";
 import { convertPathToPattern, globby } from "globby";
 import isPathInside from "is-path-inside";
-import { filterSearchablePaths } from "../../src/search/policy.ts";
-import { createTraversalFileSystem } from "../../src/search/traversal.ts";
+const jiti = createJiti(import.meta.url),
+  { filterSearchablePaths } = await jiti.import("../../src/search/policy.ts"),
+  { createTraversalFileSystem } = await jiti.import("../../src/search/traversal.ts");
 
-async function writeFiles(root: string, paths: readonly string[]): Promise<void> {
+async function writeFiles(root, paths) {
   await Promise.all(
     paths.map(async (relativePath) => {
       const filePath = nodePath.join(root, relativePath);
@@ -16,7 +20,7 @@ async function writeFiles(root: string, paths: readonly string[]): Promise<void>
     }),
   );
 }
-async function referenceFilter(paths: readonly string[], root: string): Promise<Set<string>> {
+async function referenceFilter(paths, root) {
   const relativePaths = paths
       .filter((filePath) => filePath !== root && isPathInside(filePath, root))
       .map((filePath) => nodePath.relative(root, filePath)),
@@ -40,7 +44,7 @@ async function referenceFilter(paths: readonly string[], root: string): Promise<
   }
   return allowed;
 }
-test("matches the unscoped ignore traversal across rule sources and negations", async () => {
+void test("matches the unscoped ignore traversal across rule sources and negations", async () => {
   const repository = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-ignore-")),
     root = nodePath.join(repository, "project"),
     globalConfig = nodePath.join(repository, "global.gitconfig"),
@@ -99,7 +103,8 @@ test("matches the unscoped ignore traversal across rule sources and negations", 
         "nested/nested-rg.txt",
       ].map((relativePath) => nodePath.join(root, relativePath)),
     ];
-    expect(await filterSearchablePaths(paths, [root], true, true)).toEqual(
+    assert.deepEqual(
+      await filterSearchablePaths(paths, [root], true, true),
       await referenceFilter(paths, root),
     );
   } finally {

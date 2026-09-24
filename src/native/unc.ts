@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import { hostname, networkInterfaces } from "node:os";
 import nodePath from "node:path";
+import process from "node:process";
 import nativeBridge from "./windows-bridge.cjs";
 
 const native = process.platform === "win32" ? nativeBridge : undefined,
@@ -52,8 +53,7 @@ function collectLocalServerNames(): Set<string> {
   addLocalServerName(names, "--1.ipv6-literal.net");
   return names;
 }
-const localServerNames =
-  process.platform === "win32" ? collectLocalServerNames() : new Set<string>();
+let localServerNames: Set<string> | undefined;
 let driveMappings: DriveMapping[] | undefined;
 function containsControlCharacter(value: string): boolean {
   for (const character of value) {
@@ -145,6 +145,7 @@ function resolveMappedUncPath(path: UncPath): string | undefined {
 }
 function isLocalServer(value: string): boolean {
   const normalized = normalizeServerName(value);
+  localServerNames ??= collectLocalServerNames();
   return (
     localServerNames.has(normalized) ||
     (isIP(value) === 4 && value.split(".")[0] === "127") ||

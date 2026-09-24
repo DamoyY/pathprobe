@@ -1,4 +1,5 @@
 import nodeFileSystem from "node:fs";
+import process from "node:process";
 import nodePath from "node:path";
 import type { Options as GlobbyOptions } from "globby";
 import { createHiddenPathDetector } from "./hidden.js";

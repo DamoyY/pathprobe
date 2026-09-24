@@ -1,29 +1,18 @@
-import { expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
-import fastGlob from "fast-glob";
-import { createTraversalFileSystem } from "../../src/search/traversal.ts";
+import process from "node:process";
+import { globby } from "globby";
+import { createJiti } from "jiti";
 
-type ReadDirectory = fastGlob.FileSystemAdapter["readdir"];
-function failingReadDirectory(code: string): ReadDirectory {
-  function readDirectory(
-    _filePath: string,
-    _options: { withFileTypes: true },
-    callback: (error: NodeJS.ErrnoException | null, entries: never[]) => void,
-  ): void;
-  function readDirectory(
-    _filePath: string,
-    callback: (error: NodeJS.ErrnoException | null, entries: string[]) => void,
-  ): void;
-  function readDirectory(
-    _filePath: string,
-    optionsOrCallback:
-      | { withFileTypes: true }
-      | ((error: NodeJS.ErrnoException | null, entries: string[]) => void),
-    entryCallback?: (error: NodeJS.ErrnoException | null, entries: never[]) => void,
-  ): void {
+const { createTraversalFileSystem } = await createJiti(import.meta.url).import(
+  "../../src/search/traversal.ts",
+);
+function failingReadDirectory(code) {
+  function readDirectory(_filePath, optionsOrCallback, entryCallback) {
     const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : entryCallback,
       error = Object.assign(new Error(`Injected ${code}`), { code });
     if (callback === undefined) {
@@ -33,7 +22,7 @@ function failingReadDirectory(code: string): ReadDirectory {
   }
   return readDirectory;
 }
-function setHidden(filePath: string): void {
+function setHidden(filePath) {
   if (process.platform !== "win32") {
     return;
   }
@@ -53,11 +42,11 @@ function setHidden(filePath: string): void {
     throw new Error(`attrib.exe failed with status ${result.status}: ${result.stderr}`);
   }
 }
-test("treats inaccessible or vanished directories as empty subtrees", async () => {
+void test("treats inaccessible or vanished directories as empty subtrees", async () => {
   const codes = ["EACCES", "ENOTDIR", "ENOENT", "EPERM"],
     results = await Promise.all(
       codes.map((code) =>
-        fastGlob("**/*", {
+        globby("**/*", {
           cwd: process.cwd(),
           fs: createTraversalFileSystem(process.cwd(), true, {
             readDirectory: failingReadDirectory(code),
@@ -66,21 +55,25 @@ test("treats inaccessible or vanished directories as empty subtrees", async () =
         }),
       ),
     );
-  expect(results).toEqual(codes.map(() => []));
+  assert.deepEqual(
+    results,
+    codes.map(() => []),
+  );
 });
-test("propagates unexpected directory read failures", async () => {
+void test("propagates unexpected directory read failures", async () => {
   const fileSystem = createTraversalFileSystem(process.cwd(), true, {
     readDirectory: failingReadDirectory("EIO"),
   });
-  expect(
-    fastGlob("**/*", {
+  await assert.rejects(
+    globby("**/*", {
       cwd: process.cwd(),
       fs: fileSystem,
       onlyFiles: false,
     }),
-  ).rejects.toMatchObject({ code: "EIO" });
+    { code: "EIO" },
+  );
 });
-test("prunes hidden directories before recursive traversal", async () => {
+void test("prunes hidden directories before recursive traversal", async () => {
   const root = await mkdtemp(nodePath.join(os.tmpdir(), "pathprobe-traversal-")),
     hiddenName = process.platform === "win32" ? "hidden-directory" : ".hidden",
     hiddenDirectory = nodePath.join(root, hiddenName);
@@ -88,20 +81,20 @@ test("prunes hidden directories before recursive traversal", async () => {
     await mkdir(hiddenDirectory);
     await writeFile(nodePath.join(hiddenDirectory, "secret.txt"), "");
     setHidden(hiddenDirectory);
-    const hiddenDisabled = await fastGlob("**/*", {
+    const hiddenDisabled = await globby("**/*", {
         cwd: root,
         dot: true,
         fs: createTraversalFileSystem(root, false),
         onlyFiles: false,
       }),
-      hiddenEnabled = await fastGlob("**/*", {
+      hiddenEnabled = await globby("**/*", {
         cwd: root,
         dot: true,
         fs: createTraversalFileSystem(root, true),
         onlyFiles: false,
       });
-    expect(hiddenDisabled).toEqual([]);
-    expect(hiddenEnabled).toEqual([hiddenName, `${hiddenName.replaceAll("\\", "/")}/secret.txt`]);
+    assert.deepEqual(hiddenDisabled, []);
+    assert.deepEqual(hiddenEnabled, [hiddenName, `${hiddenName.replaceAll("\\", "/")}/secret.txt`]);
   } finally {
     await rm(root, { force: true, recursive: true });
   }

@@ -1,3 +1,4 @@
+import process from "node:process";
 import { filterSearchablePaths } from "../search/policy.js";
 import type { PathKind } from "../types.js";
 

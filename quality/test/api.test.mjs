@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import process from "node:process";
 import { after, before, test } from "node:test";
 import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";

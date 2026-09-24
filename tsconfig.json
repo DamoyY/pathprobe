@@ -1,17 +1,3 @@
 {
-  "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "exactOptionalPropertyTypes": true,
-    "lib": ["ESNext"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "noEmit": true,
-    "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "esnext",
-    "types": ["bun", "node"],
-    "verbatimModuleSyntax": true
-  },
-  "include": ["config/**/*.ts", "quality/**/*.ts", "src/**/*.ts"]
+  "extends": "./config/tools/typescript.json"
 }

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import nodePath from "node:path";
 import { after, before, test } from "node:test";
 import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
 import { createFixture } from "../benchmark/fixture.mjs";
@@ -45,6 +46,49 @@ void test("preserves inventory occurrences and rejects path-like affixes", async
       { end: 39, start: 32 },
     ],
   );
+});
+void test("preserves inventory offsets after Unicode case expansion", async () => {
+  const text = "İ 😀 LICENSE İ LICENSE",
+    found = await find(text);
+  assert.deepEqual(
+    found
+      .filter((match) => match.path === fixture.pathFor("LICENSE"))
+      .map((match) => match.position),
+    [
+      { end: text.indexOf("LICENSE") + "LICENSE".length, start: text.indexOf("LICENSE") },
+      { end: text.length, start: text.lastIndexOf("LICENSE") },
+    ],
+  );
+});
+void test("preserves absolute inventory offsets with Unicode in the root and filename", async () => {
+  const root = fixture.pathFor("İ root"),
+    filePath = nodePath.join(root, "İ inventory; (file)");
+  await mkdir(root);
+  await writeFile(filePath, "");
+  const text = `İ 😀 ${filePath}`,
+    found = await findExistingPaths({
+      directories: [root],
+      level: MAX_LEVEL,
+      respectIgnore: false,
+      searchHidden: true,
+      text,
+    });
+  assert.deepEqual(
+    found.filter((match) => match.path === filePath),
+    [
+      {
+        kind: "file",
+        path: filePath,
+        position: { end: text.length, start: text.indexOf(filePath) },
+      },
+    ],
+  );
+});
+void test("rejects inventory matches ending inside a Unicode case expansion", async () => {
+  const filePath = fixture.pathFor("inventory;i");
+  await writeFile(filePath, "");
+  const found = await find("inventory;İ");
+  assert.ok(found.every((match) => match.path !== filePath));
 });
 void test("requires a marker for directories but not files", async () => {
   const text = "docs docs/ ./docs LICENSE",

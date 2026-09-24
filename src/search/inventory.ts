@@ -1,5 +1,8 @@
 import nodePath from "node:path";
+import process from "node:process";
 import { AhoCorasick } from "@monyone/aho-corasick";
+import { addAbsoluteMatch } from "./absolute-match.js";
+import { normalizeSource, originalOffset } from "./normalization.js";
 import { listSearchEntries } from "./policy.js";
 import type {
   Candidate,
@@ -81,33 +84,6 @@ function createRootPrefixes(roots: readonly string[]): RootPrefix[] {
   }
   return [...prefixes.values()];
 }
-function addAbsoluteMatch(
-  result: Candidate[],
-  seen: Set<string>,
-  source: string,
-  text: string,
-  pattern: InventoryPattern,
-  prefixes: readonly RootPrefix[],
-  end: number,
-  relativeStart: number,
-): boolean {
-  for (const prefix of prefixes) {
-    const start = relativeStart - prefix.value.length;
-    if (start >= 0 && source.startsWith(prefix.value, start)) {
-      addMatch(
-        result,
-        seen,
-        text,
-        nodePath.resolve(prefix.root, pattern.relative),
-        start,
-        end,
-        pattern.expectedKind,
-      );
-      return true;
-    }
-  }
-  return false;
-}
 function hasSameEntries(
   cached: InventoryMatcher,
   entries: readonly (readonly SearchEntry[])[],
@@ -165,7 +141,8 @@ export async function inventoryCandidates(
     ),
     result: Candidate[] = [],
     seen = new Set<string>(),
-    source = process.platform === "win32" ? text.toLowerCase() : text;
+    sourceMap = normalizeSource(text),
+    source = sourceMap.value;
   let inventoryMatcher = inventoryMatcherCache;
   if (!canReuseMatcher(inventoryMatcher, entries, roots, respectIgnore, searchHidden)) {
     const patterns = new Map<string, InventoryPattern>();
@@ -191,9 +168,22 @@ export async function inventoryCandidates(
       throw new Error("Inventory matcher returned an unknown path");
     }
     if (
-      !addAbsoluteMatch(result, seen, source, text, pattern, inventoryMatcher.prefixes, end, begin)
+      !addAbsoluteMatch(
+        source,
+        pattern,
+        inventoryMatcher.prefixes,
+        sourceMap,
+        end,
+        begin,
+        (value, start, originalEnd, expectedKind) =>
+          addMatch(result, seen, text, value, start, originalEnd, expectedKind),
+      )
     ) {
-      addMatch(result, seen, text, pattern.value, begin, end, pattern.expectedKind);
+      const start = originalOffset(sourceMap, begin),
+        originalEnd = originalOffset(sourceMap, end);
+      if (start !== undefined && originalEnd !== undefined) {
+        addMatch(result, seen, text, pattern.value, start, originalEnd, pattern.expectedKind);
+      }
     }
   }
   return result;

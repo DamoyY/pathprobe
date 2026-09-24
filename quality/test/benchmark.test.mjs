@@ -1,7 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createBenchmarkDocument, scoreMatches } from "../benchmark/score.mjs";
+import { describeRuntime, executionProfile } from "../tools/host.mjs";
 
+void test("accepts runtime identities outside a fixed list", () => {
+  assert.deepEqual(describeRuntime({ name: "custom-engine", version: "3.2.1" }), {
+    name: "custom-engine",
+    version: "3.2.1",
+  });
+  const profile = { run: ["execute"], test: ["verify"] };
+  assert.equal(executionProfile("custom-engine", { "custom-engine": profile }), profile);
+});
+void test("rejects unidentified runtimes instead of attributing them to another engine", () => {
+  assert.throws(() => describeRuntime({ name: "", version: "1.0" }));
+  assert.throws(() => describeRuntime({ name: "custom-engine", version: "" }));
+  assert.throws(() => executionProfile("unregistered", {}));
+  assert.throws(() => executionProfile("toString", {}));
+});
 function match(path, start, end) {
   return {
     kind: "file",

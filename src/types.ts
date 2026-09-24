@@ -46,7 +46,7 @@ export interface SearchEntry {
   directory: boolean;
   path: string;
 }
-export type CandidateKind = "explicit" | "heuristic" | "inventory" | "quoted" | "span";
+type CandidateKind = "explicit" | "heuristic" | "inventory" | "quoted" | "span";
 export interface Candidate {
   end: number;
   expectedKind?: PathKind;

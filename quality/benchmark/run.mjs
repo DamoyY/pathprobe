@@ -2,16 +2,19 @@ import { Bench } from "tinybench";
 import { Buffer } from "node:buffer";
 import { readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
+import process from "node:process";
 import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
 import { benchmarkSettings } from "../../config/benchmark.mjs";
 import { createDistractorText } from "./cases/distractors.mjs";
 import { createFixture } from "./fixture.mjs";
 import { createBenchmarkDocument, scoreMatches } from "./score.mjs";
+import { describeRuntime } from "../tools/host.mjs";
 
-const fixture = await createFixture({
-  noiseFilesPerRoot: benchmarkSettings.noiseFilesPerRoot,
-  writeConcurrency: benchmarkSettings.writeConcurrency,
-});
+const runtime = describeRuntime(),
+  fixture = await createFixture({
+    noiseFilesPerRoot: benchmarkSettings.noiseFilesPerRoot,
+    writeConcurrency: benchmarkSettings.writeConcurrency,
+  });
 try {
   const document = createBenchmarkDocument(
       fixture.cases,
@@ -33,13 +36,11 @@ try {
       warmup: true,
       warmupIterations: benchmarkSettings.warmupIterations,
     });
-
   for (let level = 1; level <= MAX_LEVEL; level += 1) {
     bench.add(`level ${level}`, async () => {
       await find(level);
     });
   }
-
   await bench.run();
   const measured = await Promise.all(
       Array.from({ length: MAX_LEVEL }, (_, index) => find(index + 1)),
@@ -51,11 +52,6 @@ try {
       score.medianMs = Number(task.result?.latency.p50.toFixed(3));
       return score;
     }),
-    bunVersion = globalThis.Bun?.version,
-    runtime =
-      bunVersion === undefined
-        ? { name: "node", version: process.version }
-        : { name: "bun", version: bunVersion },
     baselinePath = new URL("baseline.json", import.meta.url),
     baseline = JSON.parse(await readFile(baselinePath, "utf8"));
   if (

@@ -1,16 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
+import process from "node:process";
 import nodePath from "node:path";
 import { fixtureSettings } from "../../config/benchmark.mjs";
 import { edgeFiles } from "./cases/edge-cases.mjs";
 import { additionalFiles } from "./cases/paths.mjs";
 import { workloadFiles } from "./cases/workloads.mjs";
 import { createCorpus } from "./corpus.mjs";
-import { countPaths } from "./path-counts.mjs";
 import { createFileTree } from "./tree.mjs";
 
-export { countPaths } from "./path-counts.mjs";
 const dotPaths = ["config/.env.local", ".hidden/secret.txt"],
   windowsHiddenPaths = ["hidden-attribute.txt", "hidden-directory/secret.txt"],
   primaryFiles = [
@@ -133,9 +132,4 @@ export async function createFixture(options = {}) {
     },
     variables,
   };
-}
-export function expectedPathCounts(fixture) {
-  return countPaths(
-    fixture.cases.flatMap((item) => item.expected.map((relative) => fixture.pathFor(relative))),
-  );
 }

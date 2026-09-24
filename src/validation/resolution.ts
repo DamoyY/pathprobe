@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import process from "node:process";
 import nodePath from "node:path";
 import { applySearchPolicies } from "./eligibility.js";
 import { classifyExistingPaths } from "./existence.js";

@@ -1,4 +1,5 @@
 import { defineConfig } from "tsdown";
+import process from "node:process";
 
 export default defineConfig({
   clean: true,
@@ -7,7 +8,7 @@ export default defineConfig({
     from: "src/native/windows-bridge.cjs",
   },
   cwd: process.cwd(),
-  dts: false,
+  dts: { generator: "oxc" },
   entry: "src/index.ts",
   format: "esm",
   inputOptions: {
@@ -15,5 +16,6 @@ export default defineConfig({
   },
   platform: "node",
   sourcemap: true,
-  tsconfig: "tsconfig.json",
+  target: "es2023",
+  tsconfig: "config/tools/typescript.json",
 });
