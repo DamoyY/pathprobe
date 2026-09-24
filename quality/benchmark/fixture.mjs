@@ -15,6 +15,7 @@ const dotPaths = ["config/.env.local", ".hidden/secret.txt"],
   primaryFiles = [
     "package.json",
     "src/index.ts",
+    "src/service/operation/apply/batch.rs",
     "src/components/Primary Button.tsx",
     "docs/用户手册.md",
     "reports/quarterly report 2026.txt",

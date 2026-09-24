@@ -53,8 +53,7 @@ function collectLocalServerNames(): Set<string> {
   addLocalServerName(names, "--1.ipv6-literal.net");
   return names;
 }
-let localServerNames: Set<string> | undefined;
-let driveMappings: DriveMapping[] | undefined;
+let localServerNames: Set<string> | undefined, driveMappings: DriveMapping[] | undefined;
 function containsControlCharacter(value: string): boolean {
   for (const character of value) {
     if (character.charCodeAt(0) < 32) {

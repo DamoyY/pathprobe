@@ -74,13 +74,13 @@ findExistingPaths(options): Promise<PathMatch[]>
 较低级别适合格式明确的路径，速度也更可预测。
 
 ```ts
-level: 1
+level: 1;
 ```
 
 适用于 `/tmp/file.txt`、`C:\work\file.ts`、`./src/index.ts` 或 `"docs/My File.md"` 等明显路径。
 
 ```ts
-level: 2
+level: 2;
 ```
 
 还会尝试识别更多类似路径的文本和变量路径。
@@ -98,6 +98,7 @@ level: 2
 ```text
 src/index.ts:20
 src/index.ts:20:8
+src/index.ts#L20
 ```
 
 匹配结果会包含：

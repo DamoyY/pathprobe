@@ -75,6 +75,24 @@ export function createCorpus({
       text: "The error is in src/index.ts:12:4, according to the trace.",
     },
     {
+      expected: ["src/service/operation/apply/batch.rs"],
+      feature: "hash-line-suffix",
+      level: 2,
+      text: "Review src/service/operation/apply/batch.rs#L95 before applying the batch.",
+    },
+    {
+      expected: ["package.json"],
+      feature: "basename-hash-line",
+      level: 2,
+      text: "Check package.json#L20 for the package settings.",
+    },
+    {
+      expected: ["reports/quarterly report 2026.txt"],
+      feature: "quoted-hash-line",
+      level: 1,
+      text: 'Read "reports/quarterly report 2026.txt#L8" for the summary.',
+    },
+    {
       expected: ["reports/quarterly report 2026.txt"],
       feature: "unquoted-spaces",
       level: 3,

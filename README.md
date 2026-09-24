@@ -74,13 +74,13 @@ Optional defaults are determined by the package configuration.
 Lower levels are useful when the input already contains clearly formatted paths.
 
 ```ts
-level: 1
+level: 1;
 ```
 
 Handles obvious references such as `/tmp/file.txt`, `C:\work\file.ts`, `./src/index.ts`, and `"docs/My File.md"`.
 
 ```ts
-level: 2
+level: 2;
 ```
 
 Also detects additional path-like tokens and variable-based paths.
@@ -98,6 +98,7 @@ A path may include a source location:
 ```text
 src/index.ts:20
 src/index.ts:20:8
+src/index.ts#L20
 ```
 
 The result can then contain:

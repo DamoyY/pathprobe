@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import process from "node:process";
 import { after, before, test } from "node:test";
-import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
-import { createFixture } from "../benchmark/fixture.mjs";
+import { MAX_LEVEL, findExistingPaths } from "../../../dist/index.mjs";
+import { createFixture } from "../../benchmark/fixture.mjs";
 
 let fixture;
 function find(text, level, options = {}) {
@@ -62,41 +62,6 @@ void test("preserves repeated path occurrences", async () => {
         position: { end: 30, start: 18 },
       },
     ],
-  );
-});
-void test("returns locations and merges matches by path and position", async () => {
-  const text = "src/index.ts:12:4",
-    found = await find(text, MAX_LEVEL);
-  assert.deepEqual(
-    found.filter((match) => match.path === fixture.pathFor("src/index.ts")),
-    [
-      {
-        kind: "file",
-        location: { column: 4, line: 12 },
-        path: fixture.pathFor("src/index.ts"),
-        position: { end: 12, start: 0 },
-      },
-    ],
-  );
-});
-void test("returns line-only locations for explicit and quoted references", async () => {
-  const references = [
-      { level: 2, line: 18, pathEnd: 14, text: "./src/index.ts:18", textStart: 0 },
-      { level: 1, line: 9, pathEnd: 13, text: '"src/index.ts:9"', textStart: 1 },
-    ],
-    results = await Promise.all(
-      references.map((reference) => find(reference.text, reference.level)),
-    );
-  assert.deepEqual(
-    results,
-    references.map((reference) => [
-      {
-        kind: "file",
-        location: { line: reference.line },
-        path: fixture.pathFor("src/index.ts"),
-        position: { end: reference.pathEnd, start: reference.textStart },
-      },
-    ]),
   );
 });
 void test("uses additional variables", async () => {

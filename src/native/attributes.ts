@@ -3,8 +3,8 @@ import process from "node:process";
 import nativeBridge from "./windows-bridge.cjs";
 
 const fileAttributeHidden = 0x2,
-  invalidFileAttributes = 0xff_ff_ff_ff;
-const missingPathErrors = new Set([2, 3]);
+  invalidFileAttributes = 0xff_ff_ff_ff,
+  missingPathErrors = new Set([2, 3]);
 export function hasWindowsHiddenAttribute(filePath: string): boolean {
   if (process.platform !== "win32") {
     throw new Error("Windows file attributes are unavailable on this platform");

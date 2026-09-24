@@ -7,7 +7,7 @@ const explicitPattern =
   quotedPattern = /(["'`])(?<value>[^"'`\r\n]+)\1/gu,
   tokenPattern = /[^\s]+/gu,
   pathTokenPattern =
-    /(?:(?:[\p{L}\p{N}_@%$+~.#[\],-]+[\\/])+(?:[\p{L}\p{N}_@%$+~.#[\],-]+)|[\p{L}\p{N}_@%$+~.#[\],-]+\.[\p{L}\p{N}_@%$-]{1,16})(?::\d+){0,2}/gu,
+    /(?:(?:[\p{L}\p{N}_@%$+~.#[\],-]+[\\/])+(?:[\p{L}\p{N}_@%$+~.#[\],-]+)|[\p{L}\p{N}_@%$+~.#[\],-]+\.[\p{L}\p{N}_@%$-]{1,16})(?:#L\d+|(?::\d+){1,2})?/gu,
   unquotedPathCharacterSource = "[^\"'`<>()[\\]{}\\s]",
   variablePathPattern = new RegExp(
     `${variableReferenceSource}(?:[\\\\/]${unquotedPathCharacterSource}+)+`,
@@ -15,7 +15,7 @@ const explicitPattern =
   ),
   clausePattern = /[^\r\n!?！？;；。]+/gu,
   pathHintPattern =
-    /[\\/]|(?:^|[\s"'`])(?:\.{1,2}|~|%[A-Za-z_][A-Za-z0-9_]*%|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)(?:[\\/]|$)|\.[\p{L}\p{N}]{1,16}(?::\d+){0,2}(?:$|[\s,.;:!?，。；：！？、])/u,
+    /[\\/]|(?:^|[\s"'`])(?:\.{1,2}|~|%[A-Za-z_][A-Za-z0-9_]*%|\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)(?:[\\/]|$)|\.[\p{L}\p{N}]{1,16}(?:#L\d+|(?::\d+){1,2})?(?:$|[\s,.;:!?，。；：！？、])/u,
   variableHintPattern = new RegExp(String.raw`${variableReferenceSource}(?:[\\/]|$)`, "iu");
 function add(
   result: Candidate[],

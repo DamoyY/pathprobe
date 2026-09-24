@@ -17,11 +17,11 @@ void test("publishes the native bridge as a private CJS dependency", async () =>
   assert.equal(packageJson.exports["./native-loader"], undefined);
   assert.equal(typeof packageJson.dependencies.koffi, "string");
   assert.ok(packageJson.files.includes("dist"));
-  const bridge = await readFile(bridgeUrl, "utf8");
-  const declarations = await readFile(
-    new URL(`../../../${packageJson.exports["."].types}`, import.meta.url),
-    "utf8",
-  );
+  const bridge = await readFile(bridgeUrl, "utf8"),
+    declarations = await readFile(
+      new URL(`../../../${packageJson.exports["."].types}`, import.meta.url),
+      "utf8",
+    );
   assert.match(declarations, /findExistingPaths/u);
   assert.doesNotMatch(declarations, /Bun|NodeJS|node:/u);
   assert.match(bridge, /require\(["']koffi["']\)/u);

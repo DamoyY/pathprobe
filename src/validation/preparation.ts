@@ -43,7 +43,7 @@ export function prepareCandidate(candidate: Candidate): PreparedCandidate | unde
   if (candidate.kind !== "inventory") {
     const match = settings.locationSuffixPattern.exec(value);
     if (match !== null) {
-      const lineValue = match.groups?.line;
+      const lineValue = match.groups?.line ?? match.groups?.anchorLine;
       if (lineValue === undefined) {
         throw new TypeError("locationSuffixPattern must capture a line");
       }
