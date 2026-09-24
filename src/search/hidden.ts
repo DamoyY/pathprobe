@@ -1,10 +1,7 @@
 import nodePath from "node:path";
 import process from "node:process";
 import { hasWindowsHiddenAttribute } from "../native/attributes.js";
-
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
-}
+import { pathKey } from "./path-identity.js";
 function relativePath(filePath: string, boundary: string): string {
   const relative = nodePath.relative(boundary, filePath);
   if (

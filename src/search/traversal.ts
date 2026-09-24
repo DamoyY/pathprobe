@@ -1,8 +1,8 @@
 import nodeFileSystem from "node:fs";
-import process from "node:process";
 import nodePath from "node:path";
 import type { Options as GlobbyOptions } from "globby";
 import { createHiddenPathDetector } from "./hidden.js";
+import { pathKey } from "./path-identity.js";
 
 type ReadDirectory = NonNullable<NonNullable<GlobbyOptions["fs"]>["readdir"]>;
 const unreadableDirectoryErrors = new Set(["EACCES", "ENOTDIR", "ENOENT", "EPERM"]);
@@ -32,9 +32,6 @@ interface TraversalFileSystemOptions {
 interface IndexedScope {
   childrenByDirectory: ReadonlyMap<string, ReadonlySet<string>>;
   passthroughNames: ReadonlySet<string>;
-}
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
 }
 function isUnreadableDirectoryError(error: NodeJS.ErrnoException): boolean {
   return error.code !== undefined && unreadableDirectoryErrors.has(error.code);

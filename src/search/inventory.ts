@@ -1,9 +1,9 @@
 import nodePath from "node:path";
-import process from "node:process";
 import { AhoCorasick } from "@monyone/aho-corasick";
 import { addAbsoluteMatch } from "./absolute-match.js";
+import { listInventoryEntries } from "./inventory-cache.js";
 import { normalizeSource, originalOffset } from "./normalization.js";
-import { listSearchEntries } from "./policy.js";
+import { pathKey } from "./path-identity.js";
 import type {
   Candidate,
   InventoryMatcher,
@@ -52,7 +52,7 @@ function addVariant(
   entry: SearchEntry,
   value: string,
 ): void {
-  const key = process.platform === "win32" ? value.toLowerCase() : value;
+  const key = pathKey(value);
   if (!patterns.has(key)) {
     patterns.set(key, {
       expectedKind: entry.directory ? "directory" : "file",
@@ -78,7 +78,7 @@ function createRootPrefixes(roots: readonly string[]): RootPrefix[] {
       slashRoot = root.replaceAll(nodePath.sep, "/"),
       slash = slashRoot.endsWith("/") ? slashRoot : `${slashRoot}/`;
     for (const value of [native, slash]) {
-      const key = process.platform === "win32" ? value.toLowerCase() : value;
+      const key = pathKey(value);
       prefixes.set(key, { root, value: key });
     }
   }
@@ -88,6 +88,9 @@ function hasSameEntries(
   cached: InventoryMatcher,
   entries: readonly (readonly SearchEntry[])[],
 ): boolean {
+  if (cached.entries === entries) {
+    return true;
+  }
   if (cached.entries.length !== entries.length) {
     return false;
   }
@@ -96,6 +99,9 @@ function hasSameEntries(
       currentEntries = entries[index];
     if (cachedEntries === undefined || currentEntries === undefined) {
       return false;
+    }
+    if (cachedEntries === currentEntries) {
+      continue;
     }
     if (cachedEntries.length !== currentEntries.length) {
       return false;
@@ -137,7 +143,7 @@ export async function inventoryCandidates(
   searchHidden: boolean,
 ): Promise<Candidate[]> {
   const entries = await Promise.all(
-      roots.map((root) => listSearchEntries(root, respectIgnore, searchHidden)),
+      roots.map((root) => listInventoryEntries(root, respectIgnore, searchHidden)),
     ),
     result: Candidate[] = [],
     seen = new Set<string>(),

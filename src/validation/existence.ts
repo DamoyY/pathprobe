@@ -4,6 +4,7 @@ import nodePath from "node:path";
 import pLimit from "p-limit";
 import { settings } from "../../config/settings.js";
 import type { PathKind } from "../types.js";
+import { pathKey } from "../search/path-identity.js";
 
 const unavailablePathErrors = new Set([
     "EACCES",
@@ -15,9 +16,6 @@ const unavailablePathErrors = new Set([
     "EINVAL",
   ]),
   unverifiableUncErrors = new Set(["UNKNOWN", "EUNKNOWN"]);
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
-}
 function isUnavailablePathError(error: unknown, filePath?: string): boolean {
   const code =
     error instanceof Error && "code" in error && typeof error.code === "string"

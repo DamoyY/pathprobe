@@ -1,10 +1,6 @@
-import process from "node:process";
 import { filterSearchablePaths } from "../search/policy.js";
+import { pathKey } from "../search/path-identity.js";
 import type { PathKind } from "../types.js";
-
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
-}
 export async function applySearchPolicies(
   existingPaths: ReadonlyMap<string, PathKind>,
   roots: readonly string[],

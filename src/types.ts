@@ -58,6 +58,7 @@ export interface SearchSettings {
   batchValidationThreshold: number;
   directoryScanThreshold: number;
   ignoreFileNames: string[];
+  inventoryCacheLimit: number;
   locationSuffixPattern: RegExp;
   respectIgnoreByDefault: boolean;
   searchHiddenByDefault: boolean;

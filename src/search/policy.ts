@@ -8,14 +8,12 @@ import { resolveUncPath } from "../native/unc.js";
 import type { SearchEntry } from "../types.js";
 import { createHiddenPathDetector } from "./hidden.js";
 import { createTraversalFileSystem } from "./traversal.js";
+import { pathKey } from "./path-identity.js";
 
 const ignoreFilePatterns = settings.ignoreFileNames.map(
     (name) => `**/${convertPathToPattern(name)}`,
   ),
   ignoreFileNames = [".gitignore", ...settings.ignoreFileNames];
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
-}
 function isWithinRoot(filePath: string, root: string): boolean {
   return filePath === root || isPathInside(filePath, root);
 }

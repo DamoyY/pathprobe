@@ -7,6 +7,7 @@ import { removeContainedMatches } from "./containment.js";
 import { prepareCandidate } from "./preparation.js";
 import { expandVariables } from "../variables.js";
 import { resolveUncPath } from "../native/unc.js";
+import { pathKey, uniquePaths } from "../search/path-identity.js";
 import type {
   Candidate,
   PathKind,
@@ -21,16 +22,6 @@ interface ResolvedCandidate {
   location?: PathLocation;
   path: string;
   position: PathPosition;
-}
-function pathKey(value: string): string {
-  return process.platform === "win32" ? value.toLowerCase() : value;
-}
-function uniquePaths(values: Iterable<string>): string[] {
-  const paths = new Map<string, string>();
-  for (const value of values) {
-    paths.set(pathKey(value), value);
-  }
-  return [...paths.values()];
 }
 function unescape(value: string): string {
   if (value.startsWith(String.raw`\\`) && !value.startsWith(String.raw`\\\\`)) {
