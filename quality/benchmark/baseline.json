@@ -25,7 +25,7 @@
       },
       "adversarial": {
         "pathExpectations": 0,
-        "scenarios": 13
+        "scenarios": 17
       },
       "background": {
         "pathExpectations": 0,
@@ -33,8 +33,8 @@
       }
     },
     "pathExpectations": 102,
-    "scenarios": 97,
-    "textBytes": 61643
+    "scenarios": 101,
+    "textBytes": 61719
   },
   "runs": {
     "bun-v1.4.0": [
@@ -895,12 +895,12 @@
       {
         "falsePositives": 0,
         "matched": 25,
-        "passedScenarios": 33,
-        "scenarios": 97,
+        "passedScenarios": 37,
+        "scenarios": 101,
         "total": 102,
         "precision": 1,
         "recall": 0.245,
-        "scenarioPassRate": 0.34,
+        "scenarioPassRate": 0.366,
         "categories": {
           "syntax": {
             "falsePositives": 0,
@@ -955,8 +955,8 @@
           "adversarial": {
             "falsePositives": 0,
             "matched": 0,
-            "passedScenarios": 13,
-            "scenarios": 13,
+            "passedScenarios": 17,
+            "scenarios": 17,
             "total": 0,
             "precision": 1,
             "recall": 1,
@@ -974,18 +974,18 @@
           }
         },
         "level": 1,
-        "meanMs": 12.672,
-        "medianMs": 12.425
+        "meanMs": 13.369,
+        "medianMs": 13.094
       },
       {
         "falsePositives": 8,
         "matched": 83,
-        "passedScenarios": 71,
-        "scenarios": 97,
+        "passedScenarios": 75,
+        "scenarios": 101,
         "total": 102,
         "precision": 0.912,
         "recall": 0.814,
-        "scenarioPassRate": 0.732,
+        "scenarioPassRate": 0.743,
         "categories": {
           "syntax": {
             "falsePositives": 0,
@@ -1040,12 +1040,12 @@
           "adversarial": {
             "falsePositives": 8,
             "matched": 0,
-            "passedScenarios": 5,
-            "scenarios": 13,
+            "passedScenarios": 9,
+            "scenarios": 17,
             "total": 0,
             "precision": 0,
             "recall": 1,
-            "scenarioPassRate": 0.385
+            "scenarioPassRate": 0.529
           },
           "background": {
             "falsePositives": 0,
@@ -1059,18 +1059,18 @@
           }
         },
         "level": 2,
-        "meanMs": 34.519,
-        "medianMs": 33.365
+        "meanMs": 33.285,
+        "medianMs": 33.022
       },
       {
         "falsePositives": 8,
         "matched": 94,
-        "passedScenarios": 82,
-        "scenarios": 97,
+        "passedScenarios": 86,
+        "scenarios": 101,
         "total": 102,
         "precision": 0.922,
         "recall": 0.922,
-        "scenarioPassRate": 0.845,
+        "scenarioPassRate": 0.851,
         "categories": {
           "syntax": {
             "falsePositives": 0,
@@ -1125,12 +1125,12 @@
           "adversarial": {
             "falsePositives": 8,
             "matched": 0,
-            "passedScenarios": 5,
-            "scenarios": 13,
+            "passedScenarios": 9,
+            "scenarios": 17,
             "total": 0,
             "precision": 0,
             "recall": 1,
-            "scenarioPassRate": 0.385
+            "scenarioPassRate": 0.529
           },
           "background": {
             "falsePositives": 0,
@@ -1144,18 +1144,18 @@
           }
         },
         "level": 3,
-        "meanMs": 144.488,
-        "medianMs": 143.298
+        "meanMs": 142.745,
+        "medianMs": 144.921
       },
       {
         "falsePositives": 8,
         "matched": 96,
-        "passedScenarios": 84,
-        "scenarios": 97,
+        "passedScenarios": 88,
+        "scenarios": 101,
         "total": 102,
         "precision": 0.923,
         "recall": 0.941,
-        "scenarioPassRate": 0.866,
+        "scenarioPassRate": 0.871,
         "categories": {
           "syntax": {
             "falsePositives": 0,
@@ -1210,12 +1210,12 @@
           "adversarial": {
             "falsePositives": 8,
             "matched": 0,
-            "passedScenarios": 5,
-            "scenarios": 13,
+            "passedScenarios": 9,
+            "scenarios": 17,
             "total": 0,
             "precision": 0,
             "recall": 1,
-            "scenarioPassRate": 0.385
+            "scenarioPassRate": 0.529
           },
           "background": {
             "falsePositives": 0,
@@ -1229,18 +1229,18 @@
           }
         },
         "level": 4,
-        "meanMs": 211.07,
-        "medianMs": 207.949
+        "meanMs": 207.271,
+        "medianMs": 205.364
       },
       {
         "falsePositives": 8,
         "matched": 100,
-        "passedScenarios": 87,
-        "scenarios": 97,
+        "passedScenarios": 91,
+        "scenarios": 101,
         "total": 102,
         "precision": 0.926,
         "recall": 0.98,
-        "scenarioPassRate": 0.897,
+        "scenarioPassRate": 0.901,
         "categories": {
           "syntax": {
             "falsePositives": 0,
@@ -1295,12 +1295,12 @@
           "adversarial": {
             "falsePositives": 8,
             "matched": 0,
-            "passedScenarios": 5,
-            "scenarios": 13,
+            "passedScenarios": 9,
+            "scenarios": 17,
             "total": 0,
             "precision": 0,
             "recall": 1,
-            "scenarioPassRate": 0.385
+            "scenarioPassRate": 0.529
           },
           "background": {
             "falsePositives": 0,
@@ -1314,8 +1314,435 @@
           }
         },
         "level": 5,
-        "meanMs": 405.46,
-        "medianMs": 402.97
+        "meanMs": 251.867,
+        "medianMs": 248.445
+      }
+    ],
+    "node-v27.0.0-nightly202609268812357aff": [
+      {
+        "falsePositives": 0,
+        "matched": 25,
+        "passedScenarios": 37,
+        "scenarios": 101,
+        "total": 102,
+        "precision": 1,
+        "recall": 0.245,
+        "scenarioPassRate": 0.366,
+        "categories": {
+          "syntax": {
+            "falsePositives": 0,
+            "matched": 9,
+            "passedScenarios": 9,
+            "scenarios": 24,
+            "total": 28,
+            "precision": 1,
+            "recall": 0.321,
+            "scenarioPassRate": 0.375
+          },
+          "variables": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 0,
+            "scenarios": 18,
+            "total": 18,
+            "precision": 1,
+            "recall": 0,
+            "scenarioPassRate": 0
+          },
+          "repository": {
+            "falsePositives": 0,
+            "matched": 4,
+            "passedScenarios": 4,
+            "scenarios": 20,
+            "total": 23,
+            "precision": 1,
+            "recall": 0.174,
+            "scenarioPassRate": 0.2
+          },
+          "workloads": {
+            "falsePositives": 0,
+            "matched": 10,
+            "passedScenarios": 4,
+            "scenarios": 10,
+            "total": 20,
+            "precision": 1,
+            "recall": 0.5,
+            "scenarioPassRate": 0.4
+          },
+          "edge": {
+            "falsePositives": 0,
+            "matched": 2,
+            "passedScenarios": 2,
+            "scenarios": 11,
+            "total": 13,
+            "precision": 1,
+            "recall": 0.154,
+            "scenarioPassRate": 0.182
+          },
+          "adversarial": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 17,
+            "scenarios": 17,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "background": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 1,
+            "scenarios": 1,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          }
+        },
+        "level": 1,
+        "meanMs": 28.07,
+        "medianMs": 26.573
+      },
+      {
+        "falsePositives": 8,
+        "matched": 83,
+        "passedScenarios": 75,
+        "scenarios": 101,
+        "total": 102,
+        "precision": 0.912,
+        "recall": 0.814,
+        "scenarioPassRate": 0.743,
+        "categories": {
+          "syntax": {
+            "falsePositives": 0,
+            "matched": 21,
+            "passedScenarios": 18,
+            "scenarios": 24,
+            "total": 28,
+            "precision": 1,
+            "recall": 0.75,
+            "scenarioPassRate": 0.75
+          },
+          "variables": {
+            "falsePositives": 0,
+            "matched": 18,
+            "passedScenarios": 18,
+            "scenarios": 18,
+            "total": 18,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "repository": {
+            "falsePositives": 0,
+            "matched": 16,
+            "passedScenarios": 13,
+            "scenarios": 20,
+            "total": 23,
+            "precision": 1,
+            "recall": 0.696,
+            "scenarioPassRate": 0.65
+          },
+          "workloads": {
+            "falsePositives": 0,
+            "matched": 17,
+            "passedScenarios": 7,
+            "scenarios": 10,
+            "total": 20,
+            "precision": 1,
+            "recall": 0.85,
+            "scenarioPassRate": 0.7
+          },
+          "edge": {
+            "falsePositives": 0,
+            "matched": 11,
+            "passedScenarios": 9,
+            "scenarios": 11,
+            "total": 13,
+            "precision": 1,
+            "recall": 0.846,
+            "scenarioPassRate": 0.818
+          },
+          "adversarial": {
+            "falsePositives": 8,
+            "matched": 0,
+            "passedScenarios": 9,
+            "scenarios": 17,
+            "total": 0,
+            "precision": 0,
+            "recall": 1,
+            "scenarioPassRate": 0.529
+          },
+          "background": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 1,
+            "scenarios": 1,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          }
+        },
+        "level": 2,
+        "meanMs": 59.857,
+        "medianMs": 59.198
+      },
+      {
+        "falsePositives": 8,
+        "matched": 94,
+        "passedScenarios": 86,
+        "scenarios": 101,
+        "total": 102,
+        "precision": 0.922,
+        "recall": 0.922,
+        "scenarioPassRate": 0.851,
+        "categories": {
+          "syntax": {
+            "falsePositives": 0,
+            "matched": 23,
+            "passedScenarios": 20,
+            "scenarios": 24,
+            "total": 28,
+            "precision": 1,
+            "recall": 0.821,
+            "scenarioPassRate": 0.833
+          },
+          "variables": {
+            "falsePositives": 0,
+            "matched": 18,
+            "passedScenarios": 18,
+            "scenarios": 18,
+            "total": 18,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "repository": {
+            "falsePositives": 0,
+            "matched": 21,
+            "passedScenarios": 18,
+            "scenarios": 20,
+            "total": 23,
+            "precision": 1,
+            "recall": 0.913,
+            "scenarioPassRate": 0.9
+          },
+          "workloads": {
+            "falsePositives": 0,
+            "matched": 20,
+            "passedScenarios": 10,
+            "scenarios": 10,
+            "total": 20,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "edge": {
+            "falsePositives": 0,
+            "matched": 12,
+            "passedScenarios": 10,
+            "scenarios": 11,
+            "total": 13,
+            "precision": 1,
+            "recall": 0.923,
+            "scenarioPassRate": 0.909
+          },
+          "adversarial": {
+            "falsePositives": 8,
+            "matched": 0,
+            "passedScenarios": 9,
+            "scenarios": 17,
+            "total": 0,
+            "precision": 0,
+            "recall": 1,
+            "scenarioPassRate": 0.529
+          },
+          "background": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 1,
+            "scenarios": 1,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          }
+        },
+        "level": 3,
+        "meanMs": 156.18,
+        "medianMs": 148.166
+      },
+      {
+        "falsePositives": 8,
+        "matched": 96,
+        "passedScenarios": 88,
+        "scenarios": 101,
+        "total": 102,
+        "precision": 0.923,
+        "recall": 0.941,
+        "scenarioPassRate": 0.871,
+        "categories": {
+          "syntax": {
+            "falsePositives": 0,
+            "matched": 25,
+            "passedScenarios": 22,
+            "scenarios": 24,
+            "total": 28,
+            "precision": 1,
+            "recall": 0.893,
+            "scenarioPassRate": 0.917
+          },
+          "variables": {
+            "falsePositives": 0,
+            "matched": 18,
+            "passedScenarios": 18,
+            "scenarios": 18,
+            "total": 18,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "repository": {
+            "falsePositives": 0,
+            "matched": 21,
+            "passedScenarios": 18,
+            "scenarios": 20,
+            "total": 23,
+            "precision": 1,
+            "recall": 0.913,
+            "scenarioPassRate": 0.9
+          },
+          "workloads": {
+            "falsePositives": 0,
+            "matched": 20,
+            "passedScenarios": 10,
+            "scenarios": 10,
+            "total": 20,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "edge": {
+            "falsePositives": 0,
+            "matched": 12,
+            "passedScenarios": 10,
+            "scenarios": 11,
+            "total": 13,
+            "precision": 1,
+            "recall": 0.923,
+            "scenarioPassRate": 0.909
+          },
+          "adversarial": {
+            "falsePositives": 8,
+            "matched": 0,
+            "passedScenarios": 9,
+            "scenarios": 17,
+            "total": 0,
+            "precision": 0,
+            "recall": 1,
+            "scenarioPassRate": 0.529
+          },
+          "background": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 1,
+            "scenarios": 1,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          }
+        },
+        "level": 4,
+        "meanMs": 209.278,
+        "medianMs": 209.203
+      },
+      {
+        "falsePositives": 8,
+        "matched": 100,
+        "passedScenarios": 91,
+        "scenarios": 101,
+        "total": 102,
+        "precision": 0.926,
+        "recall": 0.98,
+        "scenarioPassRate": 0.901,
+        "categories": {
+          "syntax": {
+            "falsePositives": 0,
+            "matched": 27,
+            "passedScenarios": 23,
+            "scenarios": 24,
+            "total": 28,
+            "precision": 1,
+            "recall": 0.964,
+            "scenarioPassRate": 0.958
+          },
+          "variables": {
+            "falsePositives": 0,
+            "matched": 18,
+            "passedScenarios": 18,
+            "scenarios": 18,
+            "total": 18,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "repository": {
+            "falsePositives": 0,
+            "matched": 22,
+            "passedScenarios": 19,
+            "scenarios": 20,
+            "total": 23,
+            "precision": 1,
+            "recall": 0.957,
+            "scenarioPassRate": 0.95
+          },
+          "workloads": {
+            "falsePositives": 0,
+            "matched": 20,
+            "passedScenarios": 10,
+            "scenarios": 10,
+            "total": 20,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "edge": {
+            "falsePositives": 0,
+            "matched": 13,
+            "passedScenarios": 11,
+            "scenarios": 11,
+            "total": 13,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          },
+          "adversarial": {
+            "falsePositives": 8,
+            "matched": 0,
+            "passedScenarios": 9,
+            "scenarios": 17,
+            "total": 0,
+            "precision": 0,
+            "recall": 1,
+            "scenarioPassRate": 0.529
+          },
+          "background": {
+            "falsePositives": 0,
+            "matched": 0,
+            "passedScenarios": 1,
+            "scenarios": 1,
+            "total": 0,
+            "precision": 1,
+            "recall": 1,
+            "scenarioPassRate": 1
+          }
+        },
+        "level": 5,
+        "meanMs": 226.697,
+        "medianMs": 226.006
       }
     ]
   },
@@ -1324,8 +1751,8 @@
     "cpu": "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz",
     "platform": "win32",
     "runtime": {
-      "name": "node",
-      "version": "27.0.0-nightly20260913dc3b46f749"
+      "name": "bun",
+      "version": "1.4.3"
     }
   }
 }

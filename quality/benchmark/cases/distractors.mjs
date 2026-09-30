@@ -1,4 +1,10 @@
 export const distractorCases = [
+  ...["\\\\", "\\/", "/\\", "//"].map((prefix, index) => ({
+    expected: [],
+    feature: `escaped-unc-text-${index}`,
+    level: 1,
+    text: `"${prefix}${String.raw`u003e\u003c\p`}"`,
+  })),
   {
     expected: [],
     feature: "semantic-version",

@@ -159,10 +159,7 @@ function resolveLocalAdministrativeShare(path: UncPath): string | undefined {
   return nodePath.win32.normalize(`${match[1]}:${path.suffix || "\\"}`);
 }
 export function resolveUncPath(value: string): string | undefined {
-  if (
-    process.platform !== "win32" ||
-    (!value.startsWith(String.raw`\\`) && !value.startsWith("//"))
-  ) {
+  if (process.platform !== "win32" || !/^[\\/]{2}/u.test(value)) {
     return value;
   }
   if (containsControlCharacter(value)) {
