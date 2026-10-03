@@ -1,14 +1,14 @@
-Language Option / 语言选项：
+Language Option / 语言选项 / Opción de idioma：
 
-**English** | [简体中文](config/locales/zh-CN/README.md)
+**English** | [简体中文](./config/locales/zh-CN/README.md) | [Español](./config/locales/ES/README.md)
 
 ---
 
 # pathprobe
 
-`pathprobe` finds references to existing files and directories inside natural-language text.
+`pathprobe` extracts path-like references from text and returns the references that resolve to existing files or directories.
 
-It can recognize absolute and relative paths, quoted paths, variable-based paths, and less explicit path references, then verify that the referenced filesystem entries actually exist.
+It accepts one or more search directories, supports several path syntaxes, and reports the original text position of each match.
 
 ## Usage
 
@@ -16,7 +16,7 @@ It can recognize absolute and relative paths, quoted paths, variable-based paths
 import { findExistingPaths, MAX_LEVEL } from "pathprobe";
 
 const matches = await findExistingPaths({
-  text: "Please check src/index.ts and ./config/settings.json",
+  text: "Open src/index.ts and ./package.json.",
   directories: [process.cwd()],
   level: 2,
 });
@@ -24,123 +24,170 @@ const matches = await findExistingPaths({
 console.log(matches);
 ```
 
-Example result:
+`findExistingPaths()` returns a `Promise<PathMatch[]>`.
+
+## Options
 
 ```ts
-[
-  {
-    kind: "file",
-    path: "/project/src/index.ts",
-    position: { start: 13, end: 25 },
-  },
-];
-```
-
-## API
-
-```ts
-findExistingPaths(options): Promise<PathMatch[]>
-```
-
-Main options:
-
-```ts
-{
-  text: string;
-  directories: readonly string[];
-  level: number;
-  variables?: Record<string, string>;
-  respectIgnore?: boolean;
-  searchHidden?: boolean;
-}
+findExistingPaths({
+  text,
+  directories,
+  level,
+  variables,
+  respectIgnore,
+  searchHidden,
+});
 ```
 
 `text` is the text to inspect.
 
-`directories` contains the search roots used to resolve relative paths. At least one directory is required.
+`directories` is a non-empty array of directories used to resolve relative paths.
 
-`level` controls how aggressively paths are detected and must be between `1` and `MAX_LEVEL`. Higher levels can recognize less explicit references but may require more filesystem searching.
+`level` is an integer from `1` through `MAX_LEVEL`.
 
-`variables` supplies values for references such as `$HOME/project`, `${WORKSPACE}/src`, or `%TEMP%\file.txt`.
+`variables` is an optional object containing string values used when expanding variable references.
 
-`respectIgnore` controls whether ignore rules such as `.gitignore` are respected.
+`respectIgnore` controls whether ignore files are respected.
 
 `searchHidden` controls whether hidden files and directories are searchable.
 
-Optional defaults are determined by the package configuration.
-
 ## Search levels
 
-Lower levels are useful when the input already contains clearly formatted paths.
+Level `1` recognizes explicit paths and quoted text that resolves to an existing path.
+
+Level `2` additionally recognizes path-like tokens and paths containing supported variable references.
+
+Levels `3` and above additionally examine multi-word text spans. Higher levels allow progressively larger spans.
+
+`MAX_LEVEL` enables the broadest text-span search and filesystem inventory matching.
+
+The available maximum can be read directly from the package:
 
 ```ts
-level: 1;
+import { MAX_LEVEL } from "pathprobe";
 ```
 
-Handles obvious references such as `/tmp/file.txt`, `C:\work\file.ts`, `./src/index.ts`, and `"docs/My File.md"`.
+## Relative and absolute paths
+
+Relative paths are resolved against every directory supplied in `directories`.
 
 ```ts
-level: 2;
+const matches = await findExistingPaths({
+  text: "src/index.ts",
+  directories: ["/workspace/project-a", "/workspace/project-b"],
+  level: 2,
+});
 ```
 
-Also detects additional path-like tokens and variable-based paths.
+Absolute paths are resolved directly.
 
-`level >= 3` progressively considers longer text spans, which is useful for paths containing spaces.
-
-`MAX_LEVEL` performs the broadest search and can recognize names using the actual contents of the configured search directories.
-
-When in doubt, start with level `1` or `2` and increase it only when broader matching is needed.
-
-## Line and column locations
-
-A path may include a source location:
-
-```text
-src/index.ts:20
-src/index.ts:20:8
-src/index.ts#L20
-```
-
-The result can then contain:
-
-```ts
-location: { line: 20, column: 8 }
-```
+Supported input can include normal platform paths, `file://` URLs, home-relative paths such as `~/file.txt`, and supported variable-based paths.
 
 ## Variables
 
+Variable references can use values supplied through `variables` or values available in the process environment.
+
 ```ts
-await findExistingPaths({
-  text: "$ROOT/src/index.ts",
+const matches = await findExistingPaths({
+  text: "$PROJECT_ROOT/src/index.ts",
   directories: [process.cwd()],
   level: 2,
   variables: {
-    ROOT: "/project",
+    PROJECT_ROOT: "/workspace/example",
   },
 });
 ```
 
-Variables not supplied explicitly may also be resolved from the current process environment.
+Supported forms include `$NAME`, `${NAME}`, `%NAME%`, `!NAME!`, `$env:NAME`, `{{NAME}}`, `${{ NAME }}`, `$(NAME)`, and `@NAME@`.
 
-## Result
+Home-relative paths use `HOME` or `USERPROFILE` when available.
 
-Each `PathMatch` has the following shape:
+## Line and column locations
+
+Path references may include a source location suffix.
+
+Examples include:
+
+```text
+src/index.ts:12
+src/index.ts:12:4
+src/index.ts#L12
+```
+
+When present, the parsed location is returned separately from the filesystem path.
+
+## Result format
+
+Each result has the following shape:
 
 ```ts
-{
+interface PathMatch {
   kind: "file" | "directory";
   path: string;
-  position: { start: number; end: number };
-  location?: { line: number; column?: number };
+  position: {
+    start: number;
+    end: number;
+  };
+  location?: {
+    line: number;
+    column?: number;
+  };
 }
 ```
 
-`position` refers to the matching range in the original input `text`.
+`path` is the resolved existing filesystem path.
 
-Only paths that exist and satisfy the active hidden-file and ignore policies are returned.
+`kind` identifies whether the path is a file or directory.
 
-## Platforms
+`position` contains the start and end offsets of the reference in the original input text.
 
-Common POSIX and Windows path formats are supported.
+`location` contains an optional line and column extracted from the reference.
 
-On Windows, drive paths, resolvable UNC paths, and Windows hidden attributes are also supported.
+## Hidden and ignored paths
+
+`searchHidden` defaults to the package configuration and determines whether hidden paths are included.
+
+On Unix-like systems, dot-prefixed path segments are treated as hidden.
+
+On Windows, filesystem hidden attributes are taken into account.
+
+`respectIgnore` determines whether configured ignore files, including Git ignore rules, affect matches inside the search directories.
+
+Both values can be set explicitly:
+
+```ts
+const matches = await findExistingPaths({
+  text,
+  directories: [process.cwd()],
+  level: MAX_LEVEL,
+  respectIgnore: true,
+  searchHidden: false,
+});
+```
+
+## Windows paths
+
+Windows drive paths and UNC references are accepted as path candidates.
+
+Mapped network paths and local administrative shares may be represented as corresponding drive-based paths when they can be resolved locally.
+
+Path matching on Windows follows case-insensitive filesystem path semantics.
+
+## Exports
+
+The package exports:
+
+```ts
+findExistingPaths
+MAX_LEVEL
+
+FindExistingPathsOptions
+PathKind
+PathLocation
+PathMatch
+PathPosition
+SearchLevel
+Variables
+```
+
+Invalid option types, invalid search levels, or invalid search directories cause the returned operation to reject with an error.
