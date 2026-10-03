@@ -15,7 +15,7 @@ export default defineConfig({
     external: /(?:^|[\\/])windows-bridge\.cjs$/u,
   },
   platform: "node",
-  sourcemap: true,
+  sourcemap: false,
   target: "es2023",
   tsconfig: "config/tools/typescript.json",
 });
