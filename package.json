@@ -1,6 +1,6 @@
 {
   "name": "pathprobe",
-  "version": "1.11.17",
+  "version": "1.11.18",
   "description": "Extracts and validates existing filesystem paths from text, with configurable search levels, variable expansion, ignore rules, hidden-file handling, and Windows UNC support.",
   "keywords": [
     "bun",

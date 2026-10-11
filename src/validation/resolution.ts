@@ -31,7 +31,7 @@ function unescape(value: string): string {
 }
 function toPaths(value: string, roots: readonly string[], variables: Variables): string[] {
   let expanded = expandVariables(value, variables);
-  if (expanded.includes("\0")) {
+  if (expanded === "~" || expanded.includes("\0")) {
     return [];
   }
   if (expanded.startsWith("file://")) {
@@ -45,7 +45,7 @@ function toPaths(value: string, roots: readonly string[], variables: Variables):
     }
   } else {
     expanded = unescape(expanded);
-    if (expanded === "~" || /^~[\\/]/u.test(expanded)) {
+    if (/^~[\\/]/u.test(expanded)) {
       expanded = nodePath.join(
         variables.HOME ??
           variables.USERPROFILE ??

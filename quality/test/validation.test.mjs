@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
 import nodePath from "node:path";
 import { after, before, test } from "node:test";
 import { MAX_LEVEL, findExistingPaths } from "../../dist/index.mjs";
@@ -10,6 +11,7 @@ function find(text, level, options = {}) {
 }
 before(async () => {
   fixture = await createFixture({ noiseFilesPerRoot: 0 });
+  await writeFile(fixture.pathFor("~"), "");
 });
 after(async () => {
   await fixture.cleanup();
@@ -68,6 +70,49 @@ void test("allows the search directories themselves", async () => {
       position: { end: fixture.primary.length + 1, start: 1 },
     },
   ]);
+});
+void test("rejects a standalone tilde at every search level", async () => {
+  const inputs = [
+      "~",
+      '"~"',
+      "'~'",
+      "`~`",
+      " \t~\r\n",
+      "~.",
+      "~,",
+      "~；",
+      "~:12",
+      "~:12:3",
+      "~#L12",
+      '"~:12:3"',
+      "'~#L12'",
+      '"${TILDE}"',
+    ],
+    variables = { HOME: fixture.primary, TILDE: "~", USERPROFILE: fixture.primary };
+  for (let level = 1; level <= MAX_LEVEL; level += 1) {
+    for (const text of inputs) {
+      assert.deepEqual(await find(text, level, { variables }), [], `level ${level}: ${text}`);
+    }
+  }
+});
+void test("preserves home-relative paths at every search level", async () => {
+  const inputs = ["~/package.json", String.raw`~\package.json`],
+    variables = { HOME: fixture.primary, USERPROFILE: fixture.primary };
+  for (let level = 1; level <= MAX_LEVEL; level += 1) {
+    for (const text of inputs) {
+      assert.deepEqual(
+        await find(text, level, { variables }),
+        [
+          {
+            kind: "file",
+            path: fixture.pathFor("package.json"),
+            position: { end: text.length, start: 0 },
+          },
+        ],
+        `level ${level}: ${text}`,
+      );
+    }
+  }
 });
 void test("rejects invalid variables and boolean controls", async () => {
   await assert.rejects(findExistingPaths(null), TypeError);
